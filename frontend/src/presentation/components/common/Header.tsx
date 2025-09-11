@@ -103,7 +103,7 @@ export const Header: React.FC<HeaderProps> = ({ onRoleSelect, className = '' }) 
               <h1 className="text-xl font-semibold text-gray-900 leading-tight">
                 Образовательная платформа 
                 <span className="ml-2 font-bold text-brand-primary bg-gradient-to-r from-brand-primary to-warning-orange bg-clip-text text-transparent drop-shadow-sm hover:drop-shadow-md transition-all duration-200">
-                  YaGraph
+                  ВыготскийГраф
                 </span>
               </h1>
             </div>
@@ -236,7 +236,7 @@ export const SimpleHeader: React.FC<SimpleHeaderProps> = ({
             <div className="flex items-center">
               <div className="flex items-center mr-3">
                 <span className="text-sm font-bold text-brand-primary bg-gradient-to-r from-brand-primary to-warning-orange bg-clip-text text-transparent">
-                  Ya
+                  ВГ
                 </span>
                 <span className="text-xs text-gray-400 ml-1">•</span>
               </div>

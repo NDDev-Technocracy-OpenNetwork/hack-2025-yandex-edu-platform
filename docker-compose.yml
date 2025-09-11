@@ -1,121 +1,51 @@
-# Docker Compose configuration for Educational AI Platform
-# Full stack development environment
+version: '3.8'
 
 services:
-  # Database service
-  postgres:
-    image: postgres:15-alpine
-    container_name: edu_ai_postgres
+  # PostgreSQL Database
+  db:
+    image: postgres:15
     environment:
-      POSTGRES_DB: educational_ai
-      POSTGRES_USER: edu_user
-      POSTGRES_PASSWORD: edu_password
+      POSTGRES_DB: vygotsky_graph
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - edu_ai_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U edu_user -d educational_ai"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Redis service
-  redis:
-    image: redis:7-alpine
-    container_name: edu_ai_redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - edu_ai_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Backend service
+  # Backend API
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: development
-    container_name: edu_ai_backend
+    build: ./backend
     ports:
       - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/vygotsky_graph
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      SECRET_KEY: your-secret-key-change-in-production
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - ./backend:/app
-      - backend_uploads:/app/uploads
-    environment:
-      - DEBUG=True
-      - DATABASE_URL=postgresql+asyncpg://edu_user:edu_password@postgres:5432/educational_ai
-      - DATABASE_URL_SYNC=postgresql://edu_user:edu_password@postgres:5432/educational_ai
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/1
-      - CELERY_RESULT_BACKEND=redis://redis:6379/1
-      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
-      - SECRET_KEY=dev-secret-key-change-in-production
-      - MAX_FILE_SIZE_MB=20
-      - UPLOAD_DIR=/app/uploads
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - edu_ai_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      - ./backend/uploads:/app/uploads
 
-  # Frontend service
+  # Frontend (Development)
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      target: development
-    container_name: edu_ai_frontend
+    build: ./frontend
     ports:
       - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - VITE_API_URL=http://localhost:8000
-      - VITE_WS_URL=ws://localhost:8000/ws
     depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - edu_ai_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      - backend
 
-# Volumes
 volumes:
   postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  backend_uploads:
-    driver: local
-
-# Networks
-networks:
-  edu_ai_network:
-    driver: bridge
-    name: edu_ai_network

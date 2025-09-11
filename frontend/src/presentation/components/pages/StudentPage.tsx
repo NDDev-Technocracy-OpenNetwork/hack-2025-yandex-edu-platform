@@ -1,78 +1,102 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SimpleHeader } from '../common/Header';
 import { Footer } from '../common/Footer';
+import { useStudentCourses } from '../../hooks/useStudentCourses';
 
 interface StudentPageProps {
   onBack?: () => void;
 }
 
 export const StudentPage: React.FC<StudentPageProps> = ({ onBack }) => {
-  const courses = [
-    {
-      id: 1,
-      title: 'Основы алгоритмов и структур данных',
-      progress: 75,
-      status: 'active',
-      nodes: 45,
-      connections: 120,
-      lastActivity: '2 дня назад',
-      difficulty: 'Средний',
-      estimatedTime: '4 недели'
-    },
-    {
-      id: 2,
-      title: 'Машинное обучение: введение',
-      progress: 30,
-      status: 'active',
-      nodes: 67,
-      connections: 180,
-      lastActivity: '5 дней назад',
-      difficulty: 'Высокий',
-      estimatedTime: '6 недель'
-    },
-    {
-      id: 3,
-      title: 'Веб-разработка на Python',
-      progress: 100,
-      status: 'completed',
-      nodes: 38,
-      connections: 95,
-      lastActivity: '1 неделя назад',
-      difficulty: 'Низкий',
-      estimatedTime: '3 недели'
-    }
+  const { courses, stats, loading, error, markConceptCompleted, clearError } = useStudentCourses();
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return 'вчера';
+    if (diffDays < 7) return `${diffDays} дн. назад`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} нед. назад`;
+    return date.toLocaleDateString('ru-RU');
+  };
+
+  const statsFormatted = [
+    { label: 'Завершено курсов', value: stats.completed_courses.toString(), icon: '🎓' },
+    { label: 'Часов обучения', value: stats.learning_hours.toString(), icon: '⏱️' },
+    { label: 'Изучено понятий', value: stats.studied_concepts.toString(), icon: '🧠' },
+    { label: 'Построено связей', value: stats.built_connections.toString(), icon: '🔗' }
   ];
 
-  const stats = [
-    { label: 'Завершено курсов', value: '12', icon: '🎓' },
-    { label: 'Часов обучения', value: '240', icon: '⏱️' },
-    { label: 'Изучено понятий', value: '1,245', icon: '🧠' },
-    { label: 'Построено связей', value: '3,890', icon: '🔗' }
-  ];
-
+  // Mock recommendations for now
   const recommendations = [
     {
-      title: 'Базы данных и SQL',
-      reason: 'Основано на вашем интересе к веб-разработке',
-      difficulty: 'Средний',
-      nodes: 52
-    },
-    {
-      title: 'Системное программирование',
-      reason: 'Продолжение изучения алгоритмов',
-      difficulty: 'Высокий',
-      nodes: 74
+      title: 'Дополнительные курсы',
+      reason: 'Скоро будут доступны',
+      difficulty: 'Различный',
+      nodes: 0
     }
   ];
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'Низкий': return 'text-green-600 bg-green-50 border-green-200';
-      case 'Средний': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'Высокий': return 'text-red-600 bg-red-50 border-red-200';
+      case 'Beginner': return 'text-green-600 bg-green-50 border-green-200';
+      case 'Intermediate': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'Advanced': return 'text-red-600 bg-red-50 border-red-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
+
+  const getDifficultyText = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Beginner': return 'Начальный';
+      case 'Intermediate': return 'Средний';
+      case 'Advanced': return 'Продвинутый';
+      default: return difficulty;
+    }
+  };
+
+  if (loading && courses.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white via-gray-50/80 to-gray-50 flex flex-col">
+        <SimpleHeader title="Студент" onBack={onBack} />
+        <div className="py-8 pt-20 flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Загрузка курсов...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white via-gray-50/80 to-gray-50 flex flex-col">
+        <SimpleHeader title="Студент" onBack={onBack} />
+        <div className="py-8 pt-20 flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ошибка загрузки</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button 
+              onClick={clearError}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            >
+              Повторить
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-gray-50/80 to-gray-50 flex flex-col">
@@ -93,7 +117,7 @@ export const StudentPage: React.FC<StudentPageProps> = ({ onBack }) => {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {stats.map((stat, index) => (
+            {statsFormatted.map((stat, index) => (
               <div key={index} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-3xl">{stat.icon}</div>
@@ -118,76 +142,98 @@ export const StudentPage: React.FC<StudentPageProps> = ({ onBack }) => {
                 </div>
                 
                 <div className="p-6 space-y-4">
-                  {courses.map((course) => (
-                    <div key={course.id} className="group border border-gray-100 rounded-xl p-5 hover:border-blue-200 hover:shadow-md transition-all duration-300">
-                      
-                      {/* Course Header */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-grow">
-                          <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-300">
-                            {course.title}
-                          </h3>
-                          
-                          <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                            <div className="flex items-center">
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                              </svg>
-                              {course.nodes} узлов
-                            </div>
-                            <div className="flex items-center">
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                              </svg>
-                              {course.connections} связей
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-3">
-                          <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getDifficultyColor(course.difficulty)}`}>
-                            {course.difficulty}
-                          </span>
-                          
-                          {course.status === 'completed' && (
-                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
+                  {courses.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
                       </div>
-                      
-                      {/* Progress Bar */}
-                      {course.status !== 'completed' && (
-                        <div className="mb-4">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-gray-600">Прогресс</span>
-                            <span className="text-sm font-medium text-gray-900">{course.progress}%</span>
-                          </div>
-                          <div className="w-full bg-gray-100 rounded-full h-2">
-                            <div 
-                              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${course.progress}%` }}
-                            />
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Course Footer */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center text-xs text-gray-500 space-x-4">
-                          <span>Активность: {course.lastActivity}</span>
-                          <span>Примерно: {course.estimatedTime}</span>
-                        </div>
-                        
-                        <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform group-hover:scale-105">
-                          {course.status === 'completed' ? 'Повторить' : 'Продолжить'}
-                        </button>
-                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Пока нет доступных курсов</h3>
+                      <p className="text-gray-600 text-sm">Курсы появятся здесь, когда преподаватели их опубликуют</p>
                     </div>
-                  ))}
+                  ) : (
+                    courses.map((course) => (
+                      <div key={course.id} className="group border border-gray-100 rounded-xl p-5 hover:border-blue-200 hover:shadow-md transition-all duration-300">
+                        
+                        {/* Course Header */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-grow">
+                            <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-300">
+                              {course.title}
+                            </h3>
+                            
+                            {course.description && (
+                              <p className="text-sm text-gray-600 mb-3">{course.description}</p>
+                            )}
+                            
+                            <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                              <div className="flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                                {course.concepts.length} концепций
+                              </div>
+                              <div className="flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                </svg>
+                                {course.connections.length} связей
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-3">
+                            <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getDifficultyColor(course.difficulty)}`}>
+                              {getDifficultyText(course.difficulty)}
+                            </span>
+                            
+                            {course.progress_percentage >= 100 && (
+                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Progress Bar */}
+                        {course.progress_percentage < 100 && (
+                          <div className="mb-4">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm text-gray-600">Прогресс</span>
+                              <span className="text-sm font-medium text-gray-900">{Math.round(course.progress_percentage)}%</span>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full h-2">
+                              <div 
+                                className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${course.progress_percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Course Footer */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center text-xs text-gray-500 space-x-4">
+                            <span>Опубликован: {formatDate(course.published_at || course.created_at)}</span>
+                            <span>Пройдено: {course.completed_concepts}/{course.total_concepts}</span>
+                          </div>
+                          
+                          <button 
+                            onClick={() => {
+                              // TODO: Navigate to course detail view
+                              alert(`Откроется курс: ${course.title}`);
+                            }}
+                            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform group-hover:scale-105"
+                          >
+                            {course.progress_percentage >= 100 ? 'Повторить' : 'Продолжить'}
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
