@@ -1,0 +1,19 @@
+{
+    "name": "Образовательная платформа — Яндекс Образование",
+    "short_name": "Яндекс Образование",
+    "description": "Преобразование документов в интерактивные графы знаний",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "48x48 32x32 16x16",
+            "type": "image/x-icon"
+        }
+    ],
+    "theme_color": "#FC3F1D",
+    "background_color": "#ffffff",
+    "display": "standalone",
+    "start_url": "/",
+    "scope": "/",
+    "lang": "ru",
+    "orientation": "portrait-primary"
+}

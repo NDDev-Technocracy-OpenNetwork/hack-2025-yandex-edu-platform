@@ -1,0 +1,88 @@
+/* Design Tokens - Color System */
+/* Based on Yandex brand guidelines */
+
+:root {
+  /* Core Brand Colors */
+  --color-brand-primary: #FC3F1D;     /* Yandex Orange-Red */
+  --color-brand-secondary: #000000;   /* Pure Black */
+  --color-brand-accent: #FFCC00;      /* Tangerine Yellow */
+  
+  /* Extended Palette */
+  --color-ai-blue: #0D44A0;           /* Trust & Intelligence */
+  --color-energy-yellow: #FFE066;     /* Learning Energy */
+  --color-success-green: #2D8659;     /* Achievement */
+  --color-warning-orange: #FF7700;    /* Attention */
+  --color-danger-red: #D1293D;        /* Errors */
+  
+  /* Text Hierarchy */
+  --color-text-primary: rgba(0, 0, 0, 0.9);
+  --color-text-secondary: rgba(0, 0, 0, 0.7);
+  --color-text-hint: rgba(0, 0, 0, 0.5);
+  --color-text-inverse: #FFFFFF;
+  
+  /* Interactive States */
+  --color-interactive-default: #FC3F1D;
+  --color-interactive-hover: #E5381A;
+  --color-interactive-active: #CC3017;
+  --color-interactive-disabled: rgba(0, 0, 0, 0.3);
+  
+  /* AI-Specific Elements */
+  --color-ai-suggestion: rgba(13, 68, 160, 0.1);
+  --color-ai-highlight: rgba(255, 224, 102, 0.3);
+  --color-ai-connection: rgba(252, 63, 29, 0.4);
+  
+  /* Background Colors */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F5F5F5;
+  --bg-card: #FFFFFF;
+  --bg-hover: rgba(252, 63, 29, 0.05);
+  
+  /* Border Colors */
+  --border-light: rgba(0, 0, 0, 0.1);
+  --border-medium: rgba(0, 0, 0, 0.2);
+  --border-dark: rgba(0, 0, 0, 0.3);
+  --border-brand: #FC3F1D;
+  
+  /* Shadow Colors */
+  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.12);
+  --shadow-dark: rgba(0, 0, 0, 0.16);
+  --shadow-brand: rgba(252, 63, 29, 0.15);
+}
+
+/* Dark Theme Support */
+.theme-dark {
+  --bg-primary: #1A1A1A;
+  --bg-secondary: #2D2D2D;
+  --bg-card: #242424;
+  --bg-hover: rgba(252, 63, 29, 0.15);
+  
+  --color-text-primary: rgba(255, 255, 255, 0.9);
+  --color-text-secondary: rgba(255, 255, 255, 0.7);
+  --color-text-hint: rgba(255, 255, 255, 0.5);
+  
+  --border-light: rgba(255, 255, 255, 0.1);
+  --border-medium: rgba(255, 255, 255, 0.2);
+  --border-dark: rgba(255, 255, 255, 0.3);
+}
+
+/* High Contrast Theme for Accessibility */
+.theme-high-contrast {
+  --color-brand-primary: #FF0000;
+  --color-text-primary: #000000;
+  --color-text-secondary: #000000;
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F0F0F0;
+  --border-light: #000000;
+}
+
+/* Status Colors */
+.color-success { color: var(--color-success-green); }
+.color-warning { color: var(--color-warning-orange); }
+.color-danger { color: var(--color-danger-red); }
+.color-info { color: var(--color-ai-blue); }
+
+.bg-success { background-color: var(--color-success-green); }
+.bg-warning { background-color: var(--color-warning-orange); }
+.bg-danger { background-color: var(--color-danger-red); }
+.bg-info { background-color: var(--color-ai-blue); }

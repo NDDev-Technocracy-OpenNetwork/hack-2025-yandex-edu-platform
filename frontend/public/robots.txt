@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: /sitemap.xml
+
+# Yandex specific
+User-agent: YandexBot
+Allow: /
+
+# Educational content is crawlable
+Allow: /courses/
+Allow: /graphs/
+Allow: /materials/
