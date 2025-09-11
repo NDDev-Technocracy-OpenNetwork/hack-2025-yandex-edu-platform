@@ -8,8 +8,11 @@ from app.db.models import Course, User, CourseStatus, StudentProgress
 from app.schemas.course import StudentCourse, StudentConcept, StudentConnection
 # No auth - simplified
 
+from app.core.config import settings
+
 router = APIRouter()
 
+# Mock student ID for demo (can be made configurable)
 MOCK_STUDENT_ID = 2
 
 @router.get("/courses", response_model=List[StudentCourse])
@@ -88,7 +91,6 @@ async def get_published_courses(
 @router.get("/courses/{course_id}", response_model=StudentCourse)
 async def get_course_details(
     course_id: int,
-    current_user: User = Depends(get_current_student),
     db: AsyncSession = Depends(get_db)
 ):
     """Get detailed information about a specific published course."""
@@ -111,7 +113,7 @@ async def get_course_details(
     # Get student progress
     progress_result = await db.execute(
         select(StudentProgress).where(
-            StudentProgress.student_id == current_user.id,
+            StudentProgress.student_id == MOCK_STUDENT_ID,
             StudentProgress.course_id == course_id
         )
     )
@@ -164,7 +166,6 @@ async def get_course_details(
 async def mark_concept_completed(
     course_id: int,
     concept_id: int,
-    current_user: User = Depends(get_current_student),
     db: AsyncSession = Depends(get_db)
 ):
     """Mark a concept as completed for the student."""
@@ -181,7 +182,7 @@ async def mark_concept_completed(
     # Get or create student progress
     progress_result = await db.execute(
         select(StudentProgress).where(
-            StudentProgress.student_id == current_user.id,
+            StudentProgress.student_id == MOCK_STUDENT_ID,
             StudentProgress.course_id == course_id
         )
     )
@@ -189,7 +190,7 @@ async def mark_concept_completed(
     
     if not progress:
         progress = StudentProgress(
-            student_id=current_user.id,
+            student_id=MOCK_STUDENT_ID,
             course_id=course_id,
             completed_concepts=[],
             progress_percentage=0.0
@@ -221,14 +222,13 @@ async def mark_concept_completed(
 
 @router.get("/stats")
 async def get_student_stats(
-    current_user: User = Depends(get_current_student),
     db: AsyncSession = Depends(get_db)
 ):
     """Get student learning statistics."""
     
     # Get all student progress
     progress_result = await db.execute(
-        select(StudentProgress).where(StudentProgress.student_id == current_user.id)
+        select(StudentProgress).where(StudentProgress.student_id == MOCK_STUDENT_ID)
     )
     all_progress = progress_result.scalars().all()
     

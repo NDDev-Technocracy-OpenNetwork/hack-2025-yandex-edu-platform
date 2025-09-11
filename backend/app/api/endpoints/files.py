@@ -16,8 +16,8 @@ import aiofiles
 
 router = APIRouter()
 
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# Use upload directory from settings
+os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
 @router.post("/{course_id}/upload")
 async def upload_files(
@@ -45,7 +45,6 @@ async def upload_files(
             )
         
         # Check file size
-        file_size = 0
         content = await file.read()
         file_size = len(content)
         
@@ -58,7 +57,7 @@ async def upload_files(
         # Generate unique filename
         file_extension = os.path.splitext(file.filename)[1]
         unique_filename = f"{uuid.uuid4()}{file_extension}"
-        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+        file_path = os.path.join(settings.UPLOAD_DIR, unique_filename)
         
         # Save file
         async with aiofiles.open(file_path, 'wb') as f:
@@ -112,7 +111,6 @@ async def upload_files(
 @router.post("/{course_id}/generate-graph")
 async def generate_concept_graph(
     course_id: int,
-    current_user: User = Depends(get_current_teacher),
     db: AsyncSession = Depends(get_db)
 ):
     """Generate concept graph using AI from uploaded files."""
@@ -123,8 +121,8 @@ async def generate_concept_graph(
     )
     course = course_result.scalar_one_or_none()
     
-    if not course or course.creator_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
     
     if not course.files:
         raise HTTPException(status_code=400, detail="No files uploaded for this course")
@@ -200,7 +198,6 @@ async def generate_concept_graph(
 @router.post("/{course_id}/generate-content")
 async def generate_concept_content(
     course_id: int,
-    current_user: User = Depends(get_current_teacher),
     db: AsyncSession = Depends(get_db)
 ):
     """Generate detailed content for concepts using AI."""
@@ -214,8 +211,8 @@ async def generate_concept_content(
     )
     course = course_result.scalar_one_or_none()
     
-    if not course or course.creator_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
     
     if not course.concepts:
         raise HTTPException(status_code=400, detail="No concepts found. Generate concepts first.")
@@ -264,17 +261,16 @@ async def generate_concept_content(
 @router.get("/{course_id}/files")
 async def get_course_files(
     course_id: int,
-    current_user: User = Depends(get_current_teacher),
     db: AsyncSession = Depends(get_db)
 ):
     """Get list of files uploaded for a course."""
     
-    # Check course ownership
+    # Check course exists
     course_result = await db.execute(select(Course).where(Course.id == course_id))
     course = course_result.scalar_one_or_none()
     
-    if not course or course.creator_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
     
     # Get files
     files_result = await db.execute(

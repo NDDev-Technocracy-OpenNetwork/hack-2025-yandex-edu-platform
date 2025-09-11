@@ -16,7 +16,9 @@ from app.schemas.course import (
 
 router = APIRouter()
 
-# Mock teacher ID for demo
+from app.core.config import settings
+
+# Mock teacher ID for demo (can be made configurable)  
 MOCK_TEACHER_ID = 1
 
 @router.post("/", response_model=CourseSchema)

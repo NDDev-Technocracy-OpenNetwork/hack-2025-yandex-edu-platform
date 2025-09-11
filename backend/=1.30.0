@@ -1,0 +1,24 @@
+Defaulting to user installation because normal site-packages is not writeable
+Collecting beautifulsoup4
+  Downloading beautifulsoup4-4.13.5-py3-none-any.whl (105 kB)
+     -------------------------------------- 105.1/105.1 kB 1.0 MB/s eta 0:00:00
+Requirement already satisfied: openai in c:\users\danil\appdata\roaming\python\python310\site-packages (1.3.7)
+Collecting soupsieve>1.2
+  Downloading soupsieve-2.8-py3-none-any.whl (36 kB)
+Requirement already satisfied: typing-extensions>=4.0.0 in c:\users\danil\appdata\roaming\python\python310\site-packages (from beautifulsoup4) (4.15.0)
+Requirement already satisfied: tqdm>4 in c:\users\danil\appdata\roaming\python\python310\site-packages (from openai) (4.67.1)
+Requirement already satisfied: sniffio in c:\users\danil\appdata\roaming\python\python310\site-packages (from openai) (1.3.1)
+Requirement already satisfied: anyio<4,>=3.5.0 in c:\users\danil\appdata\roaming\python\python310\site-packages (from openai) (3.7.1)
+Requirement already satisfied: pydantic<3,>=1.9.0 in c:\users\danil\appdata\roaming\python\python310\site-packages (from openai) (2.5.0)
+Requirement already satisfied: distro<2,>=1.7.0 in c:\users\danil\appdata\roaming\python\python310\site-packages (from openai) (1.9.0)
+Requirement already satisfied: httpx<1,>=0.23.0 in c:\users\danil\appdata\roaming\python\python310\site-packages (from openai) (0.25.2)
+Requirement already satisfied: idna>=2.8 in c:\users\danil\appdata\roaming\python\python310\site-packages (from anyio<4,>=3.5.0->openai) (3.10)
+Requirement already satisfied: exceptiongroup in c:\users\danil\appdata\roaming\python\python310\site-packages (from anyio<4,>=3.5.0->openai) (1.3.0)
+Requirement already satisfied: httpcore==1.* in c:\users\danil\appdata\roaming\python\python310\site-packages (from httpx<1,>=0.23.0->openai) (1.0.9)
+Requirement already satisfied: certifi in c:\users\danil\appdata\roaming\python\python310\site-packages (from httpx<1,>=0.23.0->openai) (2025.8.3)
+Requirement already satisfied: h11>=0.16 in c:\users\danil\appdata\roaming\python\python310\site-packages (from httpcore==1.*->httpx<1,>=0.23.0->openai) (0.16.0)
+Requirement already satisfied: pydantic-core==2.14.1 in c:\users\danil\appdata\roaming\python\python310\site-packages (from pydantic<3,>=1.9.0->openai) (2.14.1)
+Requirement already satisfied: annotated-types>=0.4.0 in c:\users\danil\appdata\roaming\python\python310\site-packages (from pydantic<3,>=1.9.0->openai) (0.7.0)
+Requirement already satisfied: colorama in c:\users\danil\appdata\roaming\python\python310\site-packages (from tqdm>4->openai) (0.4.6)
+Installing collected packages: soupsieve, beautifulsoup4
+Successfully installed beautifulsoup4-4.13.5 soupsieve-2.8

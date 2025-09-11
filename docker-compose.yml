@@ -23,20 +23,21 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/vygotsky_graph
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      SECRET_KEY: your-secret-key-change-in-production
+    env_file:
+      - .env  # Использует общий .env файл
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./backend:/app
       - ./backend/uploads:/app/uploads
+      - ./.env:/app/.env  # Монтируем .env внутрь контейнера
 
   # Frontend (Development)
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: development
     ports:
       - "3000:3000"
     environment:

@@ -54,8 +54,9 @@ class CourseBase(BaseModel):
     difficulty: DifficultyLevel
     complexity_level: ComplexityLevel
 
-class CourseCreate(CourseBase):
-    pass
+class CourseCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
 
 class CourseUpdate(BaseModel):
     title: Optional[str] = None
@@ -78,6 +79,37 @@ class Course(CourseBase):
 
 class CourseWithFiles(Course):
     files: List["UploadedFile"] = []
+
+# Frontend-compatible schemas
+class FrontendConcept(BaseModel):
+    id: str
+    title: str
+    description: str
+    bloomLevel: str
+    position: dict  # {x: float, y: float}
+    progress: float
+    comments: List = []
+
+class FrontendConnection(BaseModel):
+    id: str
+    sourceId: str
+    targetId: str
+    type: str
+    strength: float
+
+class CourseResponse(BaseModel):
+    id: str
+    title: str
+    description: str
+    createdBy: str
+    createdAt: datetime
+    updatedAt: datetime
+    difficulty: str
+    concepts: List[FrontendConcept] = []
+    connections: List[FrontendConnection] = []
+
+    class Config:
+        from_attributes = True
 
 # AI Response schemas
 class AIConceptResponse(BaseModel):

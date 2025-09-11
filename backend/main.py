@@ -6,15 +6,16 @@ from app.db.database import engine
 from app.db.models import Base
 
 app = FastAPI(
-    title="ВыготскийГраф API",
+    title=settings.APP_NAME,
     description="Educational AI Platform API for Interactive Knowledge Graphs",
-    version="1.0.0"
+    version=settings.APP_VERSION,
+    debug=settings.DEBUG
 )
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,8 +32,12 @@ async def startup_event():
 
 @app.get("/")
 async def root():
-    return {"message": "ВыготскийГраф API is running"}
+    return {
+        "message": f"{settings.APP_NAME} is running",
+        "version": settings.APP_VERSION,
+        "ai_model": settings.MODEL
+    }
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)

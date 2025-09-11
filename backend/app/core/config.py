@@ -1,20 +1,53 @@
 from pydantic_settings import BaseSettings
 from typing import List
+import os
 
 class Settings(BaseSettings):
+    # Database
     DATABASE_URL: str
+    
+    # OpenAI
     OPENAI_API_KEY: str
-    SECRET_KEY: str
+    MODEL: str = "gpt-5-mini"
+    MAX_CONTEXT: int = 20000
+    MAX_TOKENS: int = 8000
+    TEMPERATURE_GRAPH: float = 0.6
+    TEMPERATURE_CONTENT: float = 0.5
+    REASONING_EFFORT: str = "medium"
+    VERBOSITY_GRAPH: str = "medium"
+    VERBOSITY_CONTENT: str = "high"
+    
+    # Security
+    SECRET_KEY: str = "dev-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    MAX_FILE_SIZE_MB: int = 50
-    ALLOWED_FILE_TYPES: str = "pdf,docx,pptx,md,txt,csv,xlsx"
+    
+    # File uploads
+    MAX_FILE_SIZE_MB: int = 20
+    UPLOAD_DIR: str = "/app/uploads"
+    ALLOWED_FILE_TYPES: str = ".pdf,.docx,.pptx,.md,.txt,.csv,.xlsx"
+    
+    # CORS
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,http://frontend:3000"
+    
+    # Application
+    APP_NAME: str = "ВыготскийГраф API"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = True
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
 
     @property
     def allowed_file_extensions(self) -> List[str]:
-        return [f".{ext}" for ext in self.ALLOWED_FILE_TYPES.split(",")]
+        return [ext.strip() for ext in self.ALLOWED_FILE_TYPES.split(",")]
+    
+    @property
+    def cors_origins_list(self) -> List[str]:
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 
     class Config:
-        env_file = ".env"
+        env_file = "../.env"  # .env файл в корневой папке проекта
+        env_file_encoding = 'utf-8'
+        extra = 'ignore'  # Ignore extra fields from .env
 
 settings = Settings()
