@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: str
     MODEL: str = "gpt-5-mini"
-    MAX_CONTEXT: int = 25000  # Increased for better context
-    MAX_TOKENS: int = 8000    # Increased for better responses
+    MAX_CONTEXT: int = 75000  # Increased 3x for complex graph building with GPT-4o-mini
+    MAX_TOKENS: int = 24000   # Increased 3x (8000 → 24000) for complex graph responses
     TEMPERATURE_GRAPH: float = 0.6
     TEMPERATURE_CONTENT: float = 0.5
     REASONING_EFFORT: str = "medium"
