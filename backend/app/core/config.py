@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # File uploads
-    MAX_FILE_SIZE_MB: int = 20
+    MAX_FILE_SIZE_MB: int = 500  # Увеличено для загрузки больших книг и документов
     UPLOAD_DIR: str = "/app/uploads"
     ALLOWED_FILE_TYPES: str = ".pdf,.docx,.pptx,.md,.txt,.csv,.xlsx"
     

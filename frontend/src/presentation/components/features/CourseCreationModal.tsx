@@ -206,7 +206,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     const allowedTypes = ['.pdf', '.docx', '.pptx', '.md', '.txt', '.csv', '.xlsx'];
-    const maxSize = 20 * 1024 * 1024; // 20MB
+    const maxSize = 500 * 1024 * 1024; // 500MB
 
     if (!createdCourseId) {
       setError({ message: 'Сначала создайте курс', code: 'NO_COURSE_ID' });

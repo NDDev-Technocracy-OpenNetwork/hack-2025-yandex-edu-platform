@@ -1,8 +1,8 @@
 // Application constants following business requirements
 
 export const FILE_UPLOAD = {
-  MAX_SIZE_MB: 20,
-  MAX_SIZE_BYTES: 20 * 1024 * 1024,
+  MAX_SIZE_MB: 500,
+  MAX_SIZE_BYTES: 500 * 1024 * 1024,
   ALLOWED_TYPES: ['.pdf', '.docx', '.txt', '.md'] as const,
   TIMEOUT_MS: 60000,
 } as const;
@@ -55,7 +55,7 @@ export const BLOOM_LEVELS = {
 } as const;
 
 export const ERROR_MESSAGES = {
-  FILE_TOO_BIG: 'Размер файла превышает 50 МБ',
+  FILE_TOO_BIG: 'Размер файла превышает 500 МБ',
   UNSUPPORTED_FORMAT: 'Неподдерживаемый формат файла',
   NETWORK_ERROR: 'Ошибка сети. Проверьте подключение',
   PROCESSING_FAILED: 'Не удалось обработать документ',

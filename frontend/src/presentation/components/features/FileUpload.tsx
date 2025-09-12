@@ -13,7 +13,7 @@ const ALLOWED_FILE_TYPES = [
   'text/markdown'
 ];
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, className = '' }) => {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -22,7 +22,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, className 
 
   const validateFile = useCallback((file: File): string | null => {
     if (file.size > MAX_FILE_SIZE) {
-      return `Размер файла превышает максимальный лимит (20MB). Текущий размер: ${(file.size / 1024 / 1024).toFixed(1)}MB`;
+      return `Размер файла превышает максимальный лимит (500MB). Текущий размер: ${(file.size / 1024 / 1024).toFixed(1)}MB`;
     }
 
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
@@ -143,7 +143,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, className 
 
           <div className="text-xs text-gray-400 space-y-1">
             <p>Поддерживаемые форматы: PDF, Word, TXT, Markdown</p>
-            <p>Максимальный размер: 20MB</p>
+            <p>Максимальный размер: 500MB</p>
           </div>
         </div>
       </div>
