@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, func, delete, update, and_, or_
 import os
 import uuid
 from datetime import datetime
@@ -925,7 +925,6 @@ async def delete_concept(
         concept.updated_at = datetime.utcnow()
         
         # Soft delete all connections related to this concept
-        from sqlalchemy import update, or_
         
         # First, find the connections to delete
         connections_to_delete_result = await db.execute(
@@ -1008,7 +1007,6 @@ async def restore_concept(
         concept.updated_at = datetime.utcnow()
         
         # Restore connections related to this concept (only if both concepts are active)
-        from sqlalchemy import update, and_, or_
         
         # Get all deleted connections for this concept
         deleted_connections_result = await db.execute(
