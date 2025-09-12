@@ -335,7 +335,7 @@ export class ApiUserRepository implements UserRepository {
   async login(credentials: { email: string, password: string }): Promise<ApiResponse<string>> {
     try {
       const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
-      apiClient.setToken(response.access_token);
+      // Note: No auth needed in this app
       
       return {
         success: true,
@@ -353,7 +353,7 @@ export class ApiUserRepository implements UserRepository {
 
   async logout(): Promise<ApiResponse<void>> {
     try {
-      apiClient.clearToken();
+      // Note: No auth needed in this app
       return { success: true };
     } catch (error) {
       return {

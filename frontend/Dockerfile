@@ -1,4 +1,4 @@
-# Multi-stage Docker build for Educational AI Platform Frontend
+# Multi-stage Docker build for ГрафиУм Frontend
 # Optimized for development and production environments
 
 # Development stage

@@ -246,56 +246,100 @@ export const useAppStore = create<AppState & AppActions>()(
 );
 
 // Selectors for common state combinations
-export const useAuth = () =>
-  useAppStore((state) => ({
-    user: state.user,
-    isAuthenticated: state.isAuthenticated,
-    userRole: state.userRole,
-    setUser: state.setUser,
-    logout: state.logout,
-  }));
+export const useAuth = () => {
+  const user = useAppStore((state) => state.user);
+  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
+  const userRole = useAppStore((state) => state.userRole);
+  const setUser = useAppStore((state) => state.setUser);
+  const logout = useAppStore((state) => state.logout);
 
-export const useCourses = () =>
-  useAppStore((state) => ({
-    courses: state.courses,
-    currentCourse: state.currentCourse,
-    isLoading: state.isCoursesLoading,
-    setCourses: state.setCourses,
-    addCourse: state.addCourse,
-    updateCourse: state.updateCourse,
-    removeCourse: state.removeCourse,
-    setCurrentCourse: state.setCurrentCourse,
-    setLoading: state.setCoursesLoading,
-  }));
+  return {
+    user,
+    isAuthenticated,
+    userRole,
+    setUser,
+    logout,
+  };
+};
 
-export const useUpload = () =>
-  useAppStore((state) => ({
-    uploadState: state.uploadState,
-    setUploadState: state.setUploadState,
-    resetUploadState: state.resetUploadState,
-    updateProgress: state.updateUploadProgress,
-    setError: state.setUploadError,
-  }));
+export const useCourses = () => {
+  const courses = useAppStore((state) => state.courses);
+  const currentCourse = useAppStore((state) => state.currentCourse);
+  const isLoading = useAppStore((state) => state.isCoursesLoading);
+  const setCourses = useAppStore((state) => state.setCourses);
+  const addCourse = useAppStore((state) => state.addCourse);
+  const updateCourse = useAppStore((state) => state.updateCourse);
+  const removeCourse = useAppStore((state) => state.removeCourse);
+  const setCurrentCourse = useAppStore((state) => state.setCurrentCourse);
+  const setLoading = useAppStore((state) => state.setCoursesLoading);
 
-export const useUI = () =>
-  useAppStore((state) => ({
-    isLoading: state.isLoading,
-    error: state.error,
-    isCreateCourseModalOpen: state.isCreateCourseModalOpen,
-    isOnboardingActive: state.isOnboardingActive,
-    setLoading: state.setLoading,
-    setError: state.setError,
-    clearError: state.clearError,
-    openCreateCourseModal: state.openCreateCourseModal,
-    closeCreateCourseModal: state.closeCreateCourseModal,
-    setOnboardingActive: state.setOnboardingActive,
-  }));
+  return {
+    courses,
+    currentCourse,
+    isLoading,
+    setCourses,
+    addCourse,
+    updateCourse,
+    removeCourse,
+    setCurrentCourse,
+    setLoading,
+  };
+};
 
-export const useGraph = () =>
-  useAppStore((state) => ({
-    filters: state.filters,
-    selectedConceptId: state.selectedConceptId,
-    setFilters: state.setFilters,
-    resetFilters: state.resetFilters,
-    setSelectedConcept: state.setSelectedConcept,
-  }));
+export const useUpload = () => {
+  const uploadState = useAppStore((state) => state.uploadState);
+  const setUploadState = useAppStore((state) => state.setUploadState);
+  const resetUploadState = useAppStore((state) => state.resetUploadState);
+  const updateProgress = useAppStore((state) => state.updateUploadProgress);
+  const setError = useAppStore((state) => state.setUploadError);
+
+  return {
+    uploadState,
+    setUploadState,
+    resetUploadState,
+    updateProgress,
+    setError,
+  };
+};
+
+export const useUI = () => {
+  const isLoading = useAppStore((state) => state.isLoading);
+  const error = useAppStore((state) => state.error);
+  const isCreateCourseModalOpen = useAppStore((state) => state.isCreateCourseModalOpen);
+  const isOnboardingActive = useAppStore((state) => state.isOnboardingActive);
+  const setLoading = useAppStore((state) => state.setLoading);
+  const setError = useAppStore((state) => state.setError);
+  const clearError = useAppStore((state) => state.clearError);
+  const openCreateCourseModal = useAppStore((state) => state.openCreateCourseModal);
+  const closeCreateCourseModal = useAppStore((state) => state.closeCreateCourseModal);
+  const setOnboardingActive = useAppStore((state) => state.setOnboardingActive);
+
+  return {
+    isLoading,
+    error,
+    isCreateCourseModalOpen,
+    isOnboardingActive,
+    setLoading,
+    setError,
+    clearError,
+    openCreateCourseModal,
+    closeCreateCourseModal,
+    setOnboardingActive,
+  };
+};
+
+export const useGraph = () => {
+  const filters = useAppStore((state) => state.filters);
+  const selectedConceptId = useAppStore((state) => state.selectedConceptId);
+  const setFilters = useAppStore((state) => state.setFilters);
+  const resetFilters = useAppStore((state) => state.resetFilters);
+  const setSelectedConcept = useAppStore((state) => state.setSelectedConcept);
+
+  return {
+    filters,
+    selectedConceptId,
+    setFilters,
+    resetFilters,
+    setSelectedConcept,
+  };
+};

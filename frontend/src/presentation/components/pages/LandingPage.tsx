@@ -164,16 +164,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
           <div className="relative mb-8 transform -rotate-1">
             <div className="relative h-[280px] max-w-4xl rounded-3xl overflow-hidden shadow-xl">
               <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(/background.png)` }} />
-              <div className="absolute top-6 left-6 z-10">
-                <div className="bg-black/70 backdrop-blur-sm rounded-2xl px-5 py-3 max-w-xs">
+              <div className="absolute top-1/2 left-6 transform -translate-y-1/2 z-10">
+                <div className="bg-black/70 backdrop-blur-sm rounded-2xl px-5 py-3 max-w-xs text-center">
                   <h3 className="text-lg font-bold text-white mb-2">Интеллектуальный анализ</h3>
                   <p className="text-xs text-gray-300 mb-3">ИИ-технологии Яндекса</p>
                   <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-center space-x-2">
                       <div className="w-1 h-1 bg-gradient-to-r from-brand-primary to-warning-orange rounded-full" />
                       <span className="text-white/90 text-xs">Извлечение понятий</span>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-center space-x-2">
                       <div className="w-1 h-1 bg-gradient-to-r from-brand-primary to-warning-orange rounded-full" />
                       <span className="text-white/90 text-xs">Семантические связи</span>
                     </div>
@@ -187,16 +187,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
           <div className="relative mb-8 ml-auto max-w-4xl transform rotate-1">
             <div className="relative h-[280px] rounded-3xl overflow-hidden shadow-xl">
               <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(/background2.webp)` }} />
-              <div className="absolute top-6 right-6 z-10">
-                <div className="bg-black/70 backdrop-blur-sm rounded-2xl px-5 py-3 max-w-xs">
+              <div className="absolute top-1/2 right-6 transform -translate-y-1/2 z-10">
+                <div className="bg-black/70 backdrop-blur-sm rounded-2xl px-5 py-3 max-w-xs text-center">
                   <h3 className="text-lg font-bold text-white mb-2">Интерактивные графы</h3>
                   <p className="text-xs text-gray-300 mb-3">Современная визуализация</p>
                   <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-center space-x-2">
                       <div className="w-1 h-1 bg-gradient-to-r from-brand-primary to-warning-orange rounded-full" />
                       <span className="text-white/90 text-xs">Динамическая навигация</span>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-center space-x-2">
                       <div className="w-1 h-1 bg-gradient-to-r from-brand-primary to-warning-orange rounded-full" />
                       <span className="text-white/90 text-xs">Адаптивное отображение</span>
                     </div>

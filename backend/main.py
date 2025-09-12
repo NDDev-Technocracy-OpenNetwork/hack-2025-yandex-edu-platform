@@ -7,7 +7,7 @@ from app.db.models import Base
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="Educational AI Platform API for Interactive Knowledge Graphs",
+    description="ГрафиУм API - Образовательная платформа Яндекса для интерактивных графов знаний",
     version=settings.APP_VERSION,
     debug=settings.DEBUG
 )

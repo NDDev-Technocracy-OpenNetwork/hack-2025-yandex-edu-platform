@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { simpleApiClient } from '../../infrastructure/api/simple-client';
+import { apiClient } from '../../infrastructure/api/client';
 
 export interface ApiCourse {
   id: number;
@@ -49,7 +49,7 @@ export const useCourses = () => {
     setError(null);
     
     try {
-      const data = await simpleApiClient.get<ApiCourse[]>(`/courses?role=${role}`);
+      const data = await apiClient.get<ApiCourse[]>(`/courses?role=${role}`);
       setCourses(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch courses');
@@ -60,7 +60,7 @@ export const useCourses = () => {
 
   const getCourse = async (courseId: number): Promise<ApiCourse | null> => {
     try {
-      const data = await simpleApiClient.get<ApiCourse>(`/courses/${courseId}`);
+      const data = await apiClient.get<ApiCourse>(`/courses/${courseId}`);
       return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch course');
@@ -78,7 +78,7 @@ export const useCourses = () => {
     setError(null);
     
     try {
-      const data = await simpleApiClient.post<ApiCourse>('/courses', courseData);
+      const data = await apiClient.post<ApiCourse>('/courses', courseData);
       setCourses(prev => [...prev, data]);
       return data;
     } catch (err) {
@@ -99,7 +99,7 @@ export const useCourses = () => {
     }>
   ): Promise<ApiCourse | null> => {
     try {
-      const data = await simpleApiClient.put<ApiCourse>(`/courses/${courseId}`, courseData);
+      const data = await apiClient.put<ApiCourse>(`/courses/${courseId}`, courseData);
       setCourses(prev => prev.map(course => course.id === courseId ? data : course));
       return data;
     } catch (err) {
@@ -110,7 +110,7 @@ export const useCourses = () => {
 
   const deleteCourse = async (courseId: number): Promise<boolean> => {
     try {
-      await simpleApiClient.delete(`/courses/${courseId}`);
+      await apiClient.delete(`/courses/${courseId}`);
       setCourses(prev => prev.filter(course => course.id !== courseId));
       return true;
     } catch (err) {
@@ -121,7 +121,7 @@ export const useCourses = () => {
 
   const publishCourse = async (courseId: number): Promise<boolean> => {
     try {
-      await simpleApiClient.post(`/courses/${courseId}/publish`);
+      await apiClient.post(`/courses/${courseId}/publish`);
       // Update local state
       setCourses(prev => prev.map(course => 
         course.id === courseId ? { ...course, status: 'published' as const } : course
@@ -138,7 +138,7 @@ export const useCourses = () => {
     setError(null);
     
     try {
-      await simpleApiClient.uploadFiles(`/files/${courseId}/upload`, files);
+      await apiClient.uploadFiles(`/files/${courseId}/upload`, files);
       // Update course status to processing
       setCourses(prev => prev.map(course => 
         course.id === courseId ? { ...course, status: 'processing' as const } : course
@@ -157,7 +157,7 @@ export const useCourses = () => {
     setError(null);
     
     try {
-      await simpleApiClient.post(`/files/${courseId}/generate-graph`);
+      await apiClient.post(`/files/${courseId}/generate-graph`);
       // Update course status
       setCourses(prev => prev.map(course => 
         course.id === courseId ? { ...course, status: 'ready_for_edit' as const } : course
@@ -176,7 +176,7 @@ export const useCourses = () => {
     setError(null);
     
     try {
-      await simpleApiClient.post(`/files/${courseId}/generate-content`);
+      await apiClient.post(`/files/${courseId}/generate-content`);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate content');
@@ -199,7 +199,7 @@ export const useCourses = () => {
     }>
   ): Promise<boolean> => {
     try {
-      await simpleApiClient.put(`/courses/${courseId}/concepts/${conceptId}`, conceptData);
+      await apiClient.put(`/courses/${courseId}/concepts/${conceptId}`, conceptData);
       // Refresh the course to get updated concepts
       const updatedCourse = await getCourse(courseId);
       if (updatedCourse) {
@@ -223,7 +223,7 @@ export const useCourses = () => {
     }>
   ): Promise<boolean> => {
     try {
-      await simpleApiClient.put(`/courses/${courseId}/connections/${connectionId}`, connectionData);
+      await apiClient.put(`/courses/${courseId}/connections/${connectionId}`, connectionData);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update connection');

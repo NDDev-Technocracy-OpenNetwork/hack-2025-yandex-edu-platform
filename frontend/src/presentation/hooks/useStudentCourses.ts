@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { simpleApiClient } from '../../infrastructure/api/simple-client';
+import { apiClient } from '../../infrastructure/api/client';
 
 export interface StudentCourse {
   id: number;
@@ -61,7 +61,7 @@ export const useStudentCourses = () => {
     setError(null);
     
     try {
-      const data = await simpleApiClient.get<StudentCourse[]>('/student/courses');
+      const data = await apiClient.get<StudentCourse[]>('/student/courses');
       setCourses(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch courses');
@@ -72,7 +72,7 @@ export const useStudentCourses = () => {
 
   const getCourseDetails = async (courseId: number): Promise<StudentCourse | null> => {
     try {
-      const data = await simpleApiClient.get<StudentCourse>(`/student/courses/${courseId}`);
+      const data = await apiClient.get<StudentCourse>(`/student/courses/${courseId}`);
       return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch course details');
@@ -82,7 +82,7 @@ export const useStudentCourses = () => {
 
   const markConceptCompleted = async (courseId: number, conceptId: number): Promise<boolean> => {
     try {
-      const response = await simpleApiClient.post<{
+      const response = await apiClient.post<{
         message: string;
         progress_percentage: number;
         completed_concepts: number;
@@ -112,7 +112,7 @@ export const useStudentCourses = () => {
 
   const fetchStudentStats = async () => {
     try {
-      const data = await simpleApiClient.get<StudentStats>('/student/stats');
+      const data = await apiClient.get<StudentStats>('/student/stats');
       setStats(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch student stats');

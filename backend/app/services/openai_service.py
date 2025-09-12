@@ -39,7 +39,7 @@ class OpenAIService:
             prompt = self._get_complex_complexity_prompt(extracted_text, course_title, course_description)
         
         try:
-            # GPT-5-mini with new parameters
+            # GPT-4o-mini for concept generation
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -52,18 +52,15 @@ class OpenAIService:
                         "content": prompt
                     }
                 ],
-                temperature=settings.TEMPERATURE_GRAPH,
-                max_tokens=settings.MAX_TOKENS,
-                response_format={"type": "json_object"},
-                reasoning_effort=settings.REASONING_EFFORT,
-                verbosity=settings.VERBOSITY_GRAPH
+                max_completion_tokens=settings.MAX_TOKENS,
+                response_format={"type": "json_object"}
             )
             
             content = response.choices[0].message.content
             parsed_response = json.loads(content)
             
-            # Validate and convert to our schema
-            return self._validate_and_convert_graph_response(parsed_response)
+            # Validate and convert to our schema (new format)
+            return self._validate_and_convert_new_graph_response(parsed_response)
             
         except Exception as e:
             raise Exception(f"Error generating concept graph: {str(e)}")
@@ -105,11 +102,8 @@ class OpenAIService:
                         "content": prompt
                     }
                 ],
-                temperature=settings.TEMPERATURE_CONTENT,
-                max_tokens=settings.MAX_TOKENS,
-                response_format={"type": "json_object"},
-                reasoning_effort=settings.REASONING_EFFORT,
-                verbosity=settings.VERBOSITY_CONTENT
+                max_completion_tokens=settings.MAX_TOKENS,
+                response_format={"type": "json_object"}
             )
             
             content = response.choices[0].message.content
@@ -132,56 +126,59 @@ class OpenAIService:
         return f"""
 Проанализируй учебный материал и создай ПРОСТОЙ образовательный граф для курса "{title}".
 
-Используй принципы российской педагогической школы:
-- Научность и систематичность изложения 
-- Доступность и последовательность
-- Связь с жизненным опытом
-- Зона ближайшего развития (по Выготскому)
+ЭКОНОМЬ ТОКЕНЫ! Быстро пробеги по тексту и выбери только КЛЮЧЕВЫЕ термины, концепты, сущности, объекты.
+
+Принципы отбора:
+- Только самые важные концепты из текста
+- Прямые и крепкие связи между ними  
+- Фокус на основных понятиях
+- Анализируй РЕАЛЬНУЮ силу связи между концептами в тексте
 
 Описание курса: {description}
 
 Учебный материал:
 {text[:settings.MAX_CONTEXT]}
 
-ТРЕБОВАНИЯ К ГРАФУ:
-1. Создай 5-8 КЛЮЧЕВЫХ концепций (фундаментальные понятия)
-2. Используй принцип "от простого к сложному"
-3. Обеспечь логическую последовательность изучения
-4. Каждая концепция = четко определенное понятие с практическим применением
-5. Связи должны отражать педагогическую логику изучения
+ТРЕБОВАНИЯ:
+1. Создай от 5 ключевых концепций
+2. Только прямые и сильные связи
+3. Экономия токенов - краткость концептов!
 
-Таксономия Блума (образовательные цели):
-- remember: запоминание основных фактов и определений
-- understand: понимание смысла и связей между понятиями  
-- apply: применение знаний в стандартных ситуациях
-- analyze: анализ структуры, причинно-следственных связей
-- evaluate: критическая оценка, сравнение подходов
-- create: синтез новых знаний, творческие задачи
-
-Типы педагогических связей:
-- prerequisite: необходимо изучить ДО данной концепции
-- part: является составной частью более общего понятия
-- similar: схожие понятия, можно изучать параллельно
-- related: дополняют друг друга, расширяют понимание
+Таксономия Блума:
+- remember: основные факты
+- understand: понимание связей  
+- apply: применение знаний
+- analyze: анализ структуры
+- evaluate: критическая оценка
+- create: создание нового
 
 СТРОГО JSON формат:
 {{
-  "concepts": [
+  "nodes": [
     {{
-      "title": "Точное название концепции",
-      "description": "Педагогически грамотное описание сути (1-2 предложения)",
+      "id": 1,
+      "title": "Название концепта",
       "bloom_level": "understand"
     }}
   ],
-  "connections": [
+  "relations": [
     {{
-      "source_concept_index": 0,
-      "target_concept_index": 1,
-      "connection_type": "prerequisite",
-      "strength": 0.8
+      "id": 1,
+      "source_node": 1,
+      "target_node": 2,
+      "label": "тип связи",
+      "directed": 0,
+      "strength": 0.7
     }}
   ]
 }}
+
+ОБЯЗАТЕЛЬНО указывай strength (силу связи) от 0.1 до 1.0:
+- 0.9-1.0: очень сильная связь (прямая зависимость, обязательная последовательность)
+- 0.7-0.8: сильная связь (важная взаимосвязь, рекомендуемая последовательность) 
+- 0.5-0.6: средняя связь (полезная взаимосвязь, дополняющие концепты)
+- 0.3-0.4: слабая связь (косвенная связь, схожие темы)
+- 0.1-0.2: очень слабая связь (отдаленная связь, контекстуальное упоминание)
 """
 
     def _get_complex_complexity_prompt(
@@ -194,58 +191,64 @@ class OpenAIService:
         return f"""
 Проанализируй учебный материал и создай РАЗВЕРНУТЫЙ образовательный граф для курса "{title}".
 
-Применяй передовые принципы российской педагогики и психологии обучения:
-- Системность и целостность знания (Давыдов)
-- Деятельностный подход (Леонтьев)
-- Развивающее обучение (Эльконин-Давыдов)
-- Зона ближайшего развития с детализацией уровней (Выготский)
-- Поэтапное формирование умственных действий (Гальперин)
+ЖЕСТКАЯ ЗАДАЧА: Выбери минимум 30 концептов для построения качественного графа! 
+
+Требования:
+- Концепты должны охватывать большую часть текста
+- Все концепты должны быть основными и важными
+- Построй очень качественные связи между концептами
+- Дай четкие labels (описания) связям
+- Покрой все ключевые аспекты темы
+- ВАЖНО: Анализируй текст и ставь реалистичные значения strength на основе того, насколько тесно связаны концепты в исходном материале
 
 Описание курса: {description}
 
 Учебный материал:
 {text[:settings.MAX_CONTEXT]}
 
-ТРЕБОВАНИЯ К РАЗВЕРНУТОМУ ГРАФУ:
-1. Создай 12-20 концепций для глубокого освоения предмета
-2. Представь многоуровневую систему: базовые → промежуточные → продвинутые
-3. Включи теоретические основы И практические применения
-4. Покрой все ключевые аспекты с детализацией подтем
-5. Создай сеть взаимосвязей для системного понимания
-6. Учти различные типы learner'ов (визуалы, кинестетики, аудиалы)
+ТРЕБОВАНИЯ К ГРАФУ:
+1. МИНИМУМ 30 концептов (основных и важных)
+2. Качественные связи с понятными labels
+3. Охват большей части текста
+4. Системный подход к структуре знаний
 
-Расширенная таксономия Блума:
-- remember: воспроизведение фактов, терминов, основных идей
-- understand: интерпретация, объяснение, резюмирование концепций
-- apply: использование в новых ситуациях, решение задач
-- analyze: разложение на части, выявление структур и отношений
-- evaluate: критическая оценка, обоснование суждений
-- create: объединение элементов в новые структуры, инновации
+Таксономия Блума:
+- remember: воспроизведение фактов и терминов
+- understand: интерпретация и объяснение концепций
+- apply: использование в новых ситуациях
+- analyze: разложение на части, анализ структур
+- evaluate: критическая оценка и суждения
+- create: создание новых структур и инноваций
 
-Типы образовательных связей:
-- prerequisite: строгая последовательность (А необходимо ДО Б)
-- part: иерархическая структура (А входит в Б как компонент)
-- similar: аналогии и параллели (можно изучать совместно)
-- related: междисциплинарные связи, контекстуальные отношения
-
-ОБЯЗАТЕЛЬНО JSON формат:
+СТРОГО JSON формат:
 {{
-  "concepts": [
+  "nodes": [
     {{
-      "title": "Точное научное название концепции",
-      "description": "Развернутое педагогическое описание с акцентом на практическое значение (2-3 предложения)",
+      "id": 1,
+      "title": "Название концепта",
       "bloom_level": "analyze"
     }}
   ],
-  "connections": [
+  "relations": [
     {{
-      "source_concept_index": 0,
-      "target_concept_index": 1,
-      "connection_type": "prerequisite",
-      "strength": 0.9
+      "id": 1,
+      "source_node": 1,
+      "target_node": 2,
+      "label": "четкое описание связи",
+      "directed": 1,
+      "strength": 0.8
     }}
   ]
 }}
+
+ОБЯЗАТЕЛЬНО указывай strength (силу связи) от 0.1 до 1.0:
+- 0.9-1.0: очень сильная связь (прямая зависимость, обязательная последовательность)
+- 0.7-0.8: сильная связь (важная взаимосвязь, рекомендуемая последовательность)
+- 0.5-0.6: средняя связь (полезная взаимосвязь, дополняющие концепты) 
+- 0.3-0.4: слабая связь (косвенная связь, схожие темы)
+- 0.1-0.2: очень слабая связь (отдаленная связь, контекстуальное упоминание)
+
+Анализируй текст и ставь реалистичные значения strength в зависимости от того, насколько тесно связаны концепты в исходном материале!
 """
 
     def _get_content_generation_prompt(
@@ -263,7 +266,7 @@ class OpenAIService:
         ])
         
         return f"""
-Создай высококачественный образовательный контент для курса "{title}" в традициях российской педагогической школы.
+Создай высококачественный образовательный контент для курса "{title}" в традициях российской педагогической школы по Выготского.
 
 ИСХОДНЫЙ УЧЕБНЫЙ МАТЕРИАЛ:
 {text[:settings.MAX_CONTEXT]}
@@ -280,25 +283,23 @@ class OpenAIService:
 - Развивающий характер: стимулирование мышления
 
 ТРЕБОВАНИЯ К КОНТЕНТУ:
-1. Для КАЖДОЙ концепции создай 7-12 предложений
+1. Для КАЖДОЙ концепции создай 5-10 предложений
 2. Начинай с четкого определения понятия
 3. Объясни суть через аналогии и примеры из исходного материала
 4. Покажи практическое применение
-5. Укажи связи с другими концепциями курса
-6. Используй активную форму изложения
-7. Добавь проблемные вопросы для размышления
+5. Используй активную форму изложения
+6. Добавь проблемные вопросы для размышления
 
 СТРУКТУРА ДЛЯ КАЖДОЙ КОНЦЕПЦИИ:
 - Определение (1-2 предложения)
 - Объяснение сути (2-3 предложения)
-- Примеры из материала (2-3 предложения)
+- Примеры из материала (2-3 предложения, если есть, если нет - проигнорируй)
 - Практическое значение (1-2 предложения)  
-- Связи с другими темами (1-2 предложения)
 
 ОБЯЗАТЕЛЬНЫЙ JSON формат:
 {{
   "concept_contents": [
-    "Первая концепция: Определение + развернутое объяснение + примеры + практическое значение + связи. Всего 7-12 предложений с педагогически выверенной структурой.",
+    "Первая концепция: Определение + развернутое объяснение + примеры + практическое значение + связи. Всего 5-10 предложений с педагогически выверенной структурой.",
     "Вторая концепция: ...",
     "..."
   ]
@@ -351,3 +352,85 @@ class OpenAIService:
             
         except Exception as e:
             raise Exception(f"Error validating AI response: {str(e)}")
+    
+    def _validate_and_convert_new_graph_response(self, response: Dict[str, Any]) -> AIGraphResponse:
+        """Validate and convert new AI response format to our schema."""
+        try:
+            nodes_data = response.get("nodes", [])
+            relations_data = response.get("relations", [])
+            
+            if not nodes_data:
+                raise Exception("No nodes found in AI response")
+            
+            if not relations_data:
+                raise Exception("No relations found in AI response")
+            
+            # Convert nodes to concepts
+            concepts = []
+            node_id_map = {}  # Map GPT node IDs to our indices
+            
+            for i, node_data in enumerate(nodes_data):
+                # Validate Bloom level
+                bloom_level = node_data.get("bloom_level", "understand")
+                if bloom_level not in [level.value for level in BloomLevel]:
+                    bloom_level = "understand"
+                
+                node_id = node_data.get("id", i + 1)
+                node_id_map[node_id] = i
+                
+                concepts.append(AIConceptResponse(
+                    title=node_data.get("title", f"Concept {i + 1}"),
+                    description="",  # No description in new format
+                    bloom_level=BloomLevel(bloom_level)
+                ))
+            
+            # Convert relations to connections
+            connections = []
+            for relation_data in relations_data:
+                source_node_id = relation_data.get("source_node")
+                target_node_id = relation_data.get("target_node")
+                
+                # Map node IDs to indices
+                if source_node_id in node_id_map and target_node_id in node_id_map:
+                    source_idx = node_id_map[source_node_id]
+                    target_idx = node_id_map[target_node_id]
+                    
+                    if source_idx != target_idx:
+                        # Determine connection type based on label
+                        label = relation_data.get("label", "").lower()
+                        connection_type = self._determine_connection_type(label)
+                        
+                        # Use strength from AI response or default based on directed flag
+                        directed = relation_data.get("directed", 0)
+                        strength = relation_data.get("strength", 0.8 if directed == 1 else 0.6)
+                        
+                        # Ensure strength is within valid range
+                        strength = max(0.1, min(1.0, strength))
+                        
+                        connections.append(AIConnectionResponse(
+                            source_concept_index=source_idx,
+                            target_concept_index=target_idx,
+                            connection_type=connection_type,
+                            strength=strength
+                        ))
+            
+            if not connections:
+                raise Exception("No valid connections could be created from AI response")
+            
+            return AIGraphResponse(concepts=concepts, connections=connections)
+            
+        except Exception as e:
+            raise Exception(f"JSON parsing error or invalid structure: {str(e)}")
+    
+    def _determine_connection_type(self, label: str) -> ConnectionType:
+        """Determine connection type based on relation label."""
+        label = label.lower()
+        
+        if any(word in label for word in ["предварительное", "необходимо", "до", "prerequisite", "before"]):
+            return ConnectionType.PREREQUISITE
+        elif any(word in label for word in ["часть", "компонент", "входит", "part", "component"]):
+            return ConnectionType.PART
+        elif any(word in label for word in ["похож", "аналог", "подобн", "similar", "like"]):
+            return ConnectionType.SIMILAR
+        else:
+            return ConnectionType.RELATED

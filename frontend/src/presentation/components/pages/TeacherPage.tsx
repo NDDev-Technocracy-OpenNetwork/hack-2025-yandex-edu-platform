@@ -4,6 +4,10 @@ import { Footer } from '../common/Footer';
 import { useTeacherCourses, useTeacherAnalytics, useTeacherActivity } from '../../hooks/useTeacher';
 import { useUI } from '../../stores/useAppStore';
 import { CourseCreationModal } from '../features/CourseCreationModal';
+import { ConfirmationModal } from '../features/ConfirmationModal';
+import { CourseConceptsModal } from '../features/CourseConceptsModal';
+import { Course } from '../../../domain/entities/Course';
+import { apiClient } from '../../../infrastructure/api/client';
 
 interface TeacherPageProps {
   onBack?: () => void;
@@ -11,11 +15,73 @@ interface TeacherPageProps {
 
 export const TeacherPage: React.FC<TeacherPageProps> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<'courses' | 'analytics' | 'library'>('courses');
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [confirmationModal, setConfirmationModal] = useState<{
+    isOpen: boolean;
+    courseId: string;
+    courseName: string;
+  }>({
+    isOpen: false,
+    courseId: '',
+    courseName: ''
+  });
+  const [conceptsModal, setConceptsModal] = useState<{
+    isOpen: boolean;
+    courseId: string;
+    courseTitle: string;
+  }>({
+    isOpen: false,
+    courseId: '',
+    courseTitle: ''
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const { courses, refreshCourses } = useTeacherCourses();
   const { analytics } = useTeacherAnalytics();
   const { activity } = useTeacherActivity();
-  const { isCreateCourseModalOpen, openCreateCourseModal, closeCreateCourseModal } = useUI();
+  const { isCreateCourseModalOpen, openCreateCourseModal, closeCreateCourseModal, setError } = useUI();
+
+  const handleEditCourse = (course: Course) => {
+    setEditingCourse(course);
+    openCreateCourseModal();
+  };
+
+  const handleCloseModal = () => {
+    setEditingCourse(null);
+    closeCreateCourseModal();
+  };
+
+  const handleDeleteCourse = (courseId: string, courseName: string) => {
+    setConfirmationModal({
+      isOpen: true,
+      courseId,
+      courseName
+    });
+  };
+
+  const handleViewConcepts = (courseId: string, courseTitle: string) => {
+    setConceptsModal({
+      isOpen: true,
+      courseId,
+      courseTitle
+    });
+  };
+
+  const confirmDeleteCourse = async () => {
+    if (!confirmationModal.courseId) return;
+    
+    setIsDeleting(true);
+    try {
+      await apiClient.delete(`/teacher/courses/${confirmationModal.courseId}`);
+      await refreshCourses(); // Refresh courses list
+      setError({ message: 'Курс успешно удален', code: 'SUCCESS' });
+    } catch (error) {
+      setError({ message: 'Не удалось удалить курс', code: 'DELETE_ERROR' });
+    } finally {
+      setIsDeleting(false);
+      setConfirmationModal({ isOpen: false, courseId: '', courseName: '' });
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -263,12 +329,18 @@ export const TeacherPage: React.FC<TeacherPageProps> = ({ onBack }) => {
                               <span className="text-xs text-gray-500">Обновлен: {lastUpdated}</span>
                               
                               <div className="flex items-center space-x-2">
-                                <button className="px-3 py-1 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300">
+                                <button 
+                                  onClick={() => handleEditCourse(course)}
+                                  className="px-3 py-1 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300"
+                                >
                                   Редактировать
                                 </button>
                                 {course.concepts.length > 0 && (
-                                  <button className="px-3 py-1 text-xs text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors duration-300">
-                                    Просмотр графа
+                                  <button 
+                                    onClick={() => handleViewConcepts(course.id, course.title)}
+                                    className="px-3 py-1 text-xs text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors duration-300"
+                                  >
+                                    Просмотр концептов
                                   </button>
                                 )}
                                 {isPublished && (
@@ -276,6 +348,12 @@ export const TeacherPage: React.FC<TeacherPageProps> = ({ onBack }) => {
                                     Аналитика
                                   </button>
                                 )}
+                                <button 
+                                  onClick={() => handleDeleteCourse(course.id, course.title)}
+                                  className="px-3 py-1 text-xs text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors duration-300"
+                                >
+                                  Удалить
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -409,8 +487,30 @@ export const TeacherPage: React.FC<TeacherPageProps> = ({ onBack }) => {
       
       <CourseCreationModal
         isOpen={isCreateCourseModalOpen}
-        onClose={closeCreateCourseModal}
+        onClose={handleCloseModal}
         onCourseCreated={refreshCourses}
+        editingCourse={editingCourse}
+      />
+
+      {/* Course Concepts Modal */}
+      <CourseConceptsModal
+        isOpen={conceptsModal.isOpen}
+        onClose={() => setConceptsModal({ isOpen: false, courseId: '', courseTitle: '' })}
+        courseId={conceptsModal.courseId}
+        courseTitle={conceptsModal.courseTitle}
+      />
+
+      {/* Course Deletion Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        onClose={() => setConfirmationModal({ isOpen: false, courseId: '', courseName: '' })}
+        onConfirm={confirmDeleteCourse}
+        title="Удалить курс"
+        message={`Вы уверены, что хотите удалить курс "${confirmationModal.courseName}"? Будут удалены все файлы, концепты и связи. Это действие нельзя отменить.`}
+        confirmText="Удалить курс"
+        cancelText="Отмена"
+        danger={true}
+        loading={isDeleting}
       />
     </div>
   );

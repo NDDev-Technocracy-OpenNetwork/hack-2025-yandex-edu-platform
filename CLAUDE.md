@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an Educational AI Platform that creates interactive knowledge graphs from course materials. It's a React-based frontend application for Yandex's educational platform.
+This is ГрафиУм - an educational platform that creates interactive knowledge graphs from course materials. It's a React-based frontend application for Yandex's open-source educational platform.
 
 ## Key Development Commands
 

@@ -6,6 +6,7 @@ from pathlib import Path
 
 # PDF parsing
 from PyPDF2 import PdfReader
+import pdfplumber
 
 # Word document parsing
 from docx import Document
@@ -36,37 +37,79 @@ class FileParserService:
             Extracted text content
         """
         try:
-            if content_type == "application/pdf":
+            # Get file extension for better detection
+            file_extension = FileParserService.get_file_extension(file_path)
+            
+            # Determine parser based on content type and file extension
+            if content_type == "application/pdf" or file_extension == ".pdf":
                 return await FileParserService._parse_pdf(file_path)
-            elif content_type in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"]:
+            elif (content_type in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"] 
+                  or file_extension in [".docx", ".doc"]):
                 return await FileParserService._parse_docx(file_path)
-            elif content_type in ["application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/vnd.ms-powerpoint"]:
+            elif (content_type in ["application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/vnd.ms-powerpoint"]
+                  or file_extension in [".pptx", ".ppt"]):
                 return await FileParserService._parse_pptx(file_path)
-            elif content_type == "text/markdown":
+            elif (content_type == "text/markdown" or file_extension == ".md" 
+                  or (content_type == "application/octet-stream" and file_extension == ".md")):
                 return await FileParserService._parse_markdown(file_path)
-            elif content_type == "text/plain":
+            elif (content_type == "text/plain" or file_extension == ".txt"
+                  or (content_type == "application/octet-stream" and file_extension == ".txt")):
                 return await FileParserService._parse_txt(file_path)
-            elif content_type in ["text/csv", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
+            elif (content_type in ["text/csv", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]
+                  or file_extension in [".csv", ".xlsx", ".xls"]):
                 return await FileParserService._parse_excel_csv(file_path, content_type)
             else:
-                raise ValueError(f"Unsupported file type: {content_type}")
+                raise ValueError(f"Unsupported file type: {content_type} (extension: {file_extension})")
                 
         except Exception as e:
             raise Exception(f"Error parsing file: {str(e)}")
     
     @staticmethod
     async def _parse_pdf(file_path: str) -> str:
-        """Parse PDF file and extract text."""
+        """Parse PDF file and extract text with proper encoding handling using pdfplumber."""
         text = ""
         try:
-            with open(file_path, 'rb') as file:
-                pdf_reader = PdfReader(file)
-                for page in pdf_reader.pages:
-                    page_text = page.extract_text()
-                    if page_text:
-                        text += page_text + "\n\n"
+            # Try pdfplumber first (better for complex layouts and Russian text)
+            with pdfplumber.open(file_path) as pdf:
+                for page_num, page in enumerate(pdf.pages):
+                    try:
+                        page_text = page.extract_text()
+                        if page_text and page_text.strip():
+                            # Clean up text - remove excessive spaces but preserve structure
+                            lines = page_text.split('\n')
+                            cleaned_lines = []
+                            for line in lines:
+                                line = line.strip()
+                                if line:
+                                    # Remove excessive spaces within line but keep structure
+                                    line = ' '.join(line.split())
+                                    cleaned_lines.append(line)
+                            
+                            if cleaned_lines:
+                                cleaned_text = '\n'.join(cleaned_lines)
+                                text += f"{cleaned_text}\n\n"
+                    except Exception as page_error:
+                        print(f"Error extracting text from page {page_num + 1} with pdfplumber: {page_error}")
+                        continue
+                        
         except Exception as e:
-            raise Exception(f"Error parsing PDF: {str(e)}")
+            print(f"pdfplumber failed: {e}, trying PyPDF2...")
+            # Fallback to PyPDF2 if pdfplumber fails
+            try:
+                with open(file_path, 'rb') as file:
+                    pdf_reader = PdfReader(file)
+                    for page_num, page in enumerate(pdf_reader.pages):
+                        try:
+                            page_text = page.extract_text()
+                            if page_text and page_text.strip():
+                                # Clean up text - remove excessive spaces and fix encoding issues
+                                cleaned_text = ' '.join(page_text.split())
+                                text += f"{cleaned_text}\n\n"
+                        except Exception as page_error:
+                            print(f"Error extracting text from page {page_num + 1} with PyPDF2: {page_error}")
+                            continue
+            except Exception as fallback_error:
+                raise Exception(f"Error parsing PDF with both libraries: pdfplumber: {str(e)}, PyPDF2: {str(fallback_error)}")
         
         return text.strip()
     
@@ -103,8 +146,6 @@ class FileParserService:
             prs = Presentation(file_path)
             
             for slide_num, slide in enumerate(prs.slides, 1):
-                text += f"--- Слайд {slide_num} ---\n"
-                
                 for shape in slide.shapes:
                     if hasattr(shape, "text") and shape.text.strip():
                         text += shape.text + "\n"
@@ -155,20 +196,11 @@ class FileParserService:
                 # Excel files
                 df = pd.read_excel(file_path)
             
-            # Convert dataframe to readable text
-            text = f"Файл содержит {len(df)} строк и {len(df.columns)} столбцов.\n\n"
-            text += f"Столбцы: {', '.join(df.columns.tolist())}\n\n"
+            # Convert dataframe to readable text - simple format for GPT
+            text = f"Столбцы: {', '.join(df.columns.tolist())}\n\n"
             
-            # Add first few rows as sample
-            sample_rows = min(10, len(df))
-            text += f"Первые {sample_rows} строк данных:\n"
-            text += df.head(sample_rows).to_string(index=False)
-            
-            # Add summary statistics for numeric columns
-            numeric_cols = df.select_dtypes(include=['number']).columns
-            if len(numeric_cols) > 0:
-                text += "\n\nСтатистика по числовым столбцам:\n"
-                text += df[numeric_cols].describe().to_string()
+            # Add all data in simple format
+            text += df.to_string(index=False)
                 
         except Exception as e:
             raise Exception(f"Error parsing Excel/CSV: {str(e)}")
@@ -193,11 +225,20 @@ class FileParserService:
             "text/plain",
             "text/csv",
             "application/vnd.ms-excel",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/octet-stream"  # Added for files that might be misidentified
         ]
         
         supported_extensions = [".pdf", ".docx", ".doc", ".pptx", ".ppt", ".md", ".txt", ".csv", ".xlsx", ".xls"]
         
         file_ext = FileParserService.get_file_extension(filename)
         
-        return content_type in supported_types or file_ext in supported_extensions
+        # Check if it's a supported content type or extension
+        is_supported_content_type = content_type in supported_types
+        is_supported_extension = file_ext in supported_extensions
+        
+        # Special case for application/octet-stream - check extension
+        if content_type == "application/octet-stream":
+            return is_supported_extension
+        
+        return is_supported_content_type or is_supported_extension

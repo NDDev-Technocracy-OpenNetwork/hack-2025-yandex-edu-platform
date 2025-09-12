@@ -125,11 +125,11 @@ export const useCourseCreation = () => {
     }
   }, [addCourse, setError, setLoading]);
 
-  const uploadFiles = useCallback(async (courseId: string, files: File[]) => {
+  const uploadFiles = useCallback(async (courseId: string, files: File[], complexity: 'simple' | 'complex' = 'simple') => {
     try {
       setLoading(true);
       
-      const result = await apiTeacherRepository.uploadFiles(courseId, files);
+      const result = await apiTeacherRepository.uploadFiles(courseId, files, complexity);
       return result;
     } catch (error) {
       setError({
