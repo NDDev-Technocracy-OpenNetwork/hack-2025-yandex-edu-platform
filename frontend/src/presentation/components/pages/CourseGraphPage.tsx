@@ -101,6 +101,10 @@ export const CourseGraphPage: React.FC<CourseGraphPageProps> = () => {
       }
 
       const graphData: GraphData = { nodes, links };
+      
+      // Имитация обработки и построения графа с эффектами (5 секунд)
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
       setGraphData(graphData);
       setShowGraph(true);
       
@@ -272,10 +276,10 @@ export const CourseGraphPage: React.FC<CourseGraphPageProps> = () => {
                 </svg>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Готов к построению графа знаний
+                Готов к показу графа знаний
               </h3>
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Все концепты имеют описания. Система готова построить интерактивный граф знаний для визуализации связей между концептами.
+                Все концепты имеют описания. Система готова показать интерактивный граф знаний для визуализации связей между концептами.
               </p>
             </div>
 
@@ -309,14 +313,14 @@ export const CourseGraphPage: React.FC<CourseGraphPageProps> = () => {
                 {isGeneratingGraph ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Построение графа...
+                    Загружается граф...
                   </>
                 ) : (
                   <>
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    🚀 Построить граф знаний
+                    🚀 Показать граф знаний
                   </>
                 )}
               </button>
