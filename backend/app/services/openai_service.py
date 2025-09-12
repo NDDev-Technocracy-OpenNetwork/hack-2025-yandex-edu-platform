@@ -57,12 +57,28 @@ class OpenAIService:
             )
             
             content = response.choices[0].message.content
-            parsed_response = json.loads(content)
+            
+            if not content or content.strip() == "":
+                raise Exception("Empty response from OpenAI")
+            
+            # Debug: log the raw response
+            print(f"Raw OpenAI response length: {len(content)}")
+            print(f"Raw OpenAI response preview: {content[:200]}...")
+            
+            try:
+                parsed_response = json.loads(content)
+            except json.JSONDecodeError as e:
+                print(f"JSON decode error: {e}")
+                print(f"Content that failed to parse: {content}")
+                raise Exception(f"Invalid JSON response from OpenAI: {str(e)}")
             
             # Validate and convert to our schema (new format)
             return self._validate_and_convert_new_graph_response(parsed_response)
             
         except Exception as e:
+            print(f"Full error in generate_concept_graph: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise Exception(f"Error generating concept graph: {str(e)}")
     
     async def generate_concept_content(
@@ -191,7 +207,7 @@ class OpenAIService:
         return f"""
 Проанализируй учебный материал и создай РАЗВЕРНУТЫЙ образовательный граф для курса "{title}".
 
-ЖЕСТКАЯ ЗАДАЧА: Выбери минимум 30 концептов для построения качественного графа! 
+ЗАДАЧА: Выбери от 10 до 15 концептов для построения качественного графа! 
 
 Требования:
 - Концепты должны охватывать большую часть текста
@@ -207,9 +223,9 @@ class OpenAIService:
 {text[:settings.MAX_CONTEXT]}
 
 ТРЕБОВАНИЯ К ГРАФУ:
-1. МИНИМУМ 30 концептов (основных и важных)
+1. ОТ 10 ДО 15 концептов (основных и важных)
 2. Качественные связи с понятными labels
-3. Охват большей части текста
+3. Охват ключевых аспектов текста
 4. Системный подход к структуре знаний
 
 Таксономия Блума:

@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: str
     MODEL: str = "gpt-5-mini"
-    MAX_CONTEXT: int = 20000
-    MAX_TOKENS: int = 8000
+    MAX_CONTEXT: int = 15000  # Reduced to avoid timeout issues
+    MAX_TOKENS: int = 6000    # Reduced to avoid timeout issues
     TEMPERATURE_GRAPH: float = 0.6
     TEMPERATURE_CONTENT: float = 0.5
     REASONING_EFFORT: str = "medium"
