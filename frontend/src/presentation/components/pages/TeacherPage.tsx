@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SimpleHeader } from '../common/Header';
 import { Footer } from '../common/Footer';
 import { useTeacherCourses, useTeacherAnalytics, useTeacherActivity } from '../../hooks/useTeacher';
@@ -14,6 +15,7 @@ interface TeacherPageProps {
 }
 
 export const TeacherPage: React.FC<TeacherPageProps> = ({ onBack }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'courses' | 'analytics' | 'library'>('courses');
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [confirmationModal, setConfirmationModal] = useState<{
@@ -262,6 +264,8 @@ export const TeacherPage: React.FC<TeacherPageProps> = ({ onBack }) => {
                     {courses && courses.length > 0 ? (
                       courses.map((course) => {
                         const isPublished = course.concepts.length > 0; // Consider course published if it has concepts
+                        const activeConcepts = course.concepts?.filter((c: any) => !c.isDeleted) || [];
+                        const hasDescriptions = activeConcepts.some((c: any) => c.description && c.description.trim() !== '');
                         const progressPercentage = course.progress?.completed || 0;
                         const lastUpdated = new Date(course.updatedAt).toLocaleDateString('ru-RU');
                         
@@ -350,10 +354,15 @@ export const TeacherPage: React.FC<TeacherPageProps> = ({ onBack }) => {
                                   Концепты
                                 </button>
                                 
-                                {/* Граф - пока недоступно */}
+                                {/* Граф - доступно если есть описания концептов */}
                                 <button 
-                                  disabled={true}
-                                  className="px-3 py-1 text-xs text-gray-400 border border-gray-200 rounded-lg cursor-not-allowed transition-colors duration-300"
+                                  disabled={!hasDescriptions}
+                                  onClick={() => hasDescriptions && navigate(`/course/${course.id}/graph`)}
+                                  className={`px-3 py-1 text-xs border rounded-lg transition-colors duration-300 ${
+                                    hasDescriptions 
+                                      ? 'text-purple-600 border-purple-300 hover:bg-purple-50 cursor-pointer' 
+                                      : 'text-gray-400 border-gray-200 cursor-not-allowed'
+                                  }`}
                                 >
                                   Граф
                                 </button>

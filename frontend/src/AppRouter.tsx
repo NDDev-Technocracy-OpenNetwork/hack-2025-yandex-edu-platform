@@ -4,6 +4,7 @@ import { ErrorBoundary } from './presentation/components/common/ErrorStates';
 import { LandingPage } from './presentation/components/pages/LandingPage';
 import { StudentPage } from './presentation/components/pages/StudentPage';
 import { TeacherPage } from './presentation/components/pages/TeacherPage';
+import { CourseGraphPage } from './presentation/components/pages/CourseGraphPage';
 import { Header } from './presentation/components/common/Header';
 import { UserRole } from './domain/types/User';
 
@@ -41,6 +42,10 @@ const AppRouter: React.FC = () => {
             <Route 
               path="/teacher" 
               element={<TeacherPage onBack={handleBackToLanding} />} 
+            />
+            <Route 
+              path="/course/:courseId/graph" 
+              element={<CourseGraphPage />} 
             />
             <Route 
               path="*" 

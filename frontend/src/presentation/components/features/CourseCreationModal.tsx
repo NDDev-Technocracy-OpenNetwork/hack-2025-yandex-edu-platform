@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCourseCreation } from '../../hooks/useTeacher';
 import { useUI, useUpload } from '../../stores/useAppStore';
 import { PROCESSING_STATES } from '../../../shared/constants';
@@ -21,7 +22,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
   onCourseCreated,
   editingCourse
 }) => {
-  const [currentStep, setCurrentStep] = useState<'form' | 'upload' | 'processing' | 'concepts' | 'content' | 'graph'>('form');
+  const [currentStep, setCurrentStep] = useState<'form' | 'upload' | 'processing' | 'concepts' | 'content'>('form');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
@@ -46,10 +47,26 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
   });
   const [isConceptsModalOpen, setIsConceptsModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isGeneratingDescriptions, setIsGeneratingDescriptions] = useState(false);
+  const [isLoadingConcepts, setIsLoadingConcepts] = useState(false);
   
+  const navigate = useNavigate();
   const { createCourse, uploadFiles, isCreating } = useCourseCreation();
   const { uploadState, setUploadState, resetUploadState } = useUpload();
   const { setError } = useUI();
+
+  // Translate Bloom levels to Russian
+  const getBloomLevelRussian = (level: string) => {
+    const translations = {
+      'remember': 'запоминание',
+      'understand': 'понимание',
+      'apply': 'применение', 
+      'analyze': 'анализ',
+      'evaluate': 'оценка',
+      'create': 'создание'
+    };
+    return translations[level as keyof typeof translations] || level;
+  };
 
   // Initialize modal for editing
   useEffect(() => {
@@ -87,6 +104,8 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
     setConfirmationModal({ isOpen: false, type: 'file', id: '', name: '' });
     setIsConceptsModalOpen(false);
     setIsDeleting(false);
+    setIsGeneratingDescriptions(false);
+    setIsLoadingConcepts(false);
     setProcessingFiles({});
     resetUploadState();
     onClose();
@@ -109,11 +128,14 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
   const loadConcepts = async () => {
     if (!createdCourseId) return;
     
+    setIsLoadingConcepts(true);
     try {
       const response: any = await apiClient.get(`/teacher/courses/${createdCourseId}`);
       setConcepts(response.concepts || []);
     } catch (error) {
       console.error('Ошибка загрузки концептов:', error);
+    } finally {
+      setIsLoadingConcepts(false);
     }
   };
 
@@ -359,12 +381,11 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
             {currentStep === 'processing' && 'Обработка курса'}
             {currentStep === 'concepts' && 'Редактирование концептов'}
             {currentStep === 'content' && 'Контент концептов'}
-            {currentStep === 'graph' && 'Создание графа'}
           </h2>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
-            disabled={currentStep === 'processing' || currentStep === 'graph'}
+            disabled={currentStep === 'processing'}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -390,39 +411,30 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
             }`}>2</div>
             <div className="w-8 h-0.5 bg-gray-200">
               <div className={`h-full bg-blue-500 transition-all duration-300 ${
-                ['processing', 'concepts', 'content', 'graph'].includes(currentStep) ? 'w-full' : 'w-0'
+                ['processing', 'concepts', 'content'].includes(currentStep) ? 'w-full' : 'w-0'
               }`} />
             </div>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
               currentStep === 'processing' ? 'bg-blue-500 text-white' : 
-              ['concepts', 'content', 'graph'].includes(currentStep) ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+              ['concepts', 'content'].includes(currentStep) ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
             }`}>3</div>
             <div className="w-8 h-0.5 bg-gray-200">
               <div className={`h-full bg-blue-500 transition-all duration-300 ${
-                ['concepts', 'content', 'graph'].includes(currentStep) ? 'w-full' : 'w-0'
+                ['concepts', 'content'].includes(currentStep) ? 'w-full' : 'w-0'
               }`} />
             </div>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
               currentStep === 'concepts' ? 'bg-blue-500 text-white' : 
-              ['content', 'graph'].includes(currentStep) ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+              currentStep === 'content' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
             }`}>4</div>
             <div className="w-8 h-0.5 bg-gray-200">
               <div className={`h-full bg-blue-500 transition-all duration-300 ${
-                ['content', 'graph'].includes(currentStep) ? 'w-full' : 'w-0'
+                currentStep === 'content' ? 'w-full' : 'w-0'
               }`} />
             </div>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              currentStep === 'content' ? 'bg-blue-500 text-white' : 
-              currentStep === 'graph' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+              currentStep === 'content' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500'
             }`}>5</div>
-            <div className="w-8 h-0.5 bg-gray-200">
-              <div className={`h-full bg-blue-500 transition-all duration-300 ${
-                currentStep === 'graph' ? 'w-full' : 'w-0'
-              }`} />
-            </div>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              currentStep === 'graph' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500'
-            }`}>6</div>
           </div>
         </div>
 
@@ -801,6 +813,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
                 {createdCourseId && (
                   <button
                     onClick={async () => {
+                      setIsGeneratingDescriptions(true);
                       try {
                         await apiClient.post(`/teacher/courses/${createdCourseId}/generate-descriptions`);
                         // Reload concepts with new descriptions
@@ -809,11 +822,21 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
                         setError(null);
                       } catch (error) {
                         console.error('Ошибка генерации описаний:', error);
+                      } finally {
+                        setIsGeneratingDescriptions(false);
                       }
                     }}
-                    className="px-3 py-1 text-xs bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-colors font-medium"
+                    disabled={isGeneratingDescriptions}
+                    className="px-3 py-1 text-xs bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                   >
-                    🤖 Сгенерировать описания
+                    {isGeneratingDescriptions ? (
+                      <>
+                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                        Генерация...
+                      </>
+                    ) : (
+                      <>🤖 Сгенерировать описания</>
+                    )}
                   </button>
                 )}
               </div>
@@ -822,15 +845,22 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
               </p>
             </div>
 
-            <div className="max-h-[500px] overflow-y-auto space-y-4">
-              {concepts.filter(concept => !concept.isDeleted).map((concept, index) => (
+            <div className="max-h-[400px] overflow-y-auto space-y-4">
+              {isLoadingConcepts ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <p className="text-gray-600">Загрузка концептов...</p>
+                  </div>
+                </div>
+              ) : concepts.filter(concept => !concept.isDeleted).map((concept, index) => (
                 <div key={concept.id || index} className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white shadow-sm">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h4 className="font-semibold text-lg text-gray-900">{concept.title}</h4>
                         <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
-                          {concept.bloomLevel || 'понимание'}
+                          {getBloomLevelRussian(concept.bloomLevel) || 'понимание'}
                         </span>
                       </div>
                     </div>
@@ -905,7 +935,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
                 </div>
               ))}
 
-              {concepts.filter(concept => !concept.isDeleted).length === 0 && (
+              {!isLoadingConcepts && concepts.filter(concept => !concept.isDeleted).length === 0 && (
                 <div className="text-center py-12">
                   <div className="text-gray-400 mb-2">
                     <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -925,75 +955,16 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
                 Назад к концептам
               </button>
               <button
-                onClick={() => setCurrentStep('graph')}
+                onClick={() => {
+                  if (createdCourseId) {
+                    handleClose(); // Close the modal
+                    navigate(`/course/${createdCourseId}/graph`);
+                  }
+                }}
                 disabled={concepts.filter(concept => !concept.isDeleted).length === 0}
                 className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Построить граф
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 6: Graph Building */}
-        {currentStep === 'graph' && (
-          <div className="space-y-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-medium text-blue-900 mb-2">Создание графа знаний</h3>
-              <p className="text-sm text-blue-700">
-                Система генерирует описания для каждого концепта и создает связи между ними
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Создание контента для концептов...
-              </h3>
-              <p className="text-sm text-gray-600">
-                ИИ анализирует материалы и создает подробные описания
-              </p>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-3">Статистика графа:</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Концептов:</span>
-                  <span className="ml-2 font-medium">{concepts.length}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Сложность:</span>
-                  <span className="ml-2 font-medium">{complexity === 'simple' ? 'Простая' : 'Сложная'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Файлов обработано:</span>
-                  <span className="ml-2 font-medium">{uploadedFiles.length}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Статус:</span>
-                  <span className="ml-2 font-medium text-blue-600">Обработка...</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center pt-4">
-              <button
-                onClick={() => {
-                  // Simulate graph creation completion
-                  setTimeout(() => {
-                    setError({ message: 'Курс успешно создан! Переходим к просмотру...', code: 'SUCCESS' });
-                    setTimeout(() => {
-                      if (onCourseCreated) onCourseCreated();
-                      handleClose();
-                    }, 1500);
-                  }, 3000);
-                }}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-              >
-                Завершить создание курса
               </button>
             </div>
           </div>
