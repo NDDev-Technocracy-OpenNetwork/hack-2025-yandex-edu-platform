@@ -17,7 +17,6 @@ interface TeacherPageProps {
 export const TeacherPage: React.FC<TeacherPageProps> = ({ onBack }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'courses' | 'analytics' | 'library'>('courses');
-  const [loadingGraphId, setLoadingGraphId] = useState<string | null>(null);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [confirmationModal, setConfirmationModal] = useState<{
     isOpen: boolean;
@@ -44,13 +43,7 @@ export const TeacherPage: React.FC<TeacherPageProps> = ({ onBack }) => {
   const { activity } = useTeacherActivity();
   const { isCreateCourseModalOpen, openCreateCourseModal, closeCreateCourseModal, setError } = useUI();
 
-  const handleShowGraph = async (courseId: string) => {
-    setLoadingGraphId(courseId);
-    
-    // Имитация загрузки графа с красивой анимацией (5 секунд)
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
-    setLoadingGraphId(null);
+  const handleShowGraph = (courseId: string) => {
     navigate(`/course/${courseId}/graph`);
   };
 
@@ -367,29 +360,18 @@ export const TeacherPage: React.FC<TeacherPageProps> = ({ onBack }) => {
                                 
                                 {/* Граф - доступно если есть описания концептов */}
                                 <button 
-                                  disabled={!hasDescriptions || loadingGraphId === course.id}
+                                  disabled={!hasDescriptions}
                                   onClick={() => hasDescriptions && handleShowGraph(course.id)}
-                                  className={`px-3 py-1 text-xs border rounded-lg transition-all duration-300 flex items-center gap-2 ${
-                                    loadingGraphId === course.id 
-                                      ? 'text-purple-600 border-purple-300 bg-purple-50 cursor-wait' 
-                                      : hasDescriptions 
-                                        ? 'text-purple-600 border-purple-300 hover:bg-purple-50 cursor-pointer' 
-                                        : 'text-gray-400 border-gray-200 cursor-not-allowed'
+                                  className={`px-3 py-1 text-xs border rounded-lg transition-colors duration-300 flex items-center gap-2 ${
+                                    hasDescriptions 
+                                      ? 'text-purple-600 border-purple-300 hover:bg-purple-50 cursor-pointer' 
+                                      : 'text-gray-400 border-gray-200 cursor-not-allowed'
                                   }`}
                                 >
-                                  {loadingGraphId === course.id ? (
-                                    <>
-                                      <div className="w-3 h-3 border border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                                      Загружается...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                      </svg>
-                                      Показать Граф
-                                    </>
-                                  )}
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                  </svg>
+                                  Показать Граф
                                 </button>
                                 
                                 {/* Аналитика - активно, если опубликован */}

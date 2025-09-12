@@ -4,6 +4,7 @@ import { apiClient } from '../../../infrastructure/api/client';
 import { GraphContainer } from '../graph/GraphContainer';
 import { GraphData, GraphNode } from '../../../domain/types/Graph';
 import { ConnectionType, BloomLevel } from '../../../shared/types';
+import { GraphBuildingAnimation } from '../common/GraphBuildingAnimation';
 
 interface CourseGraphPageProps {}
 
@@ -16,6 +17,7 @@ export const CourseGraphPage: React.FC<CourseGraphPageProps> = () => {
   const [isGeneratingGraph, setIsGeneratingGraph] = useState(false);
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [showGraph, setShowGraph] = useState(false);
+  const [showGraphAnimation, setShowGraphAnimation] = useState(false);
 
   useEffect(() => {
     if (courseId) {
@@ -42,6 +44,8 @@ export const CourseGraphPage: React.FC<CourseGraphPageProps> = () => {
     if (!courseId || !course) return;
     
     setIsGeneratingGraph(true);
+    setShowGraphAnimation(true);
+    
     try {
       // Convert course concepts and connections to graph format
       const activeConcepts = course.concepts?.filter((c: any) => !c.isDeleted) || [];
@@ -101,12 +105,7 @@ export const CourseGraphPage: React.FC<CourseGraphPageProps> = () => {
       }
 
       const graphData: GraphData = { nodes, links };
-      
-      // Имитация обработки и построения графа с эффектами (5 секунд)
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      
       setGraphData(graphData);
-      setShowGraph(true);
       
       console.log('Graph built successfully!', { 
         nodes: nodes.length, 
@@ -119,6 +118,11 @@ export const CourseGraphPage: React.FC<CourseGraphPageProps> = () => {
     } finally {
       setIsGeneratingGraph(false);
     }
+  };
+
+  const handleAnimationComplete = () => {
+    setShowGraphAnimation(false);
+    setShowGraph(true);
   };
 
   if (loading) {
@@ -328,6 +332,13 @@ export const CourseGraphPage: React.FC<CourseGraphPageProps> = () => {
           </div>
         )}
       </div>
+      
+      {/* Graph Building Animation */}
+      <GraphBuildingAnimation
+        isVisible={showGraphAnimation}
+        onComplete={handleAnimationComplete}
+        concepts={course?.concepts?.filter((c: any) => !c.isDeleted) || []}
+      />
     </div>
   );
 };
