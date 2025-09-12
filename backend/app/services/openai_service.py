@@ -132,6 +132,83 @@ class OpenAIService:
         except Exception as e:
             raise Exception(f"Error generating concept content: {str(e)}")
     
+    async def generate_concept_descriptions(
+        self,
+        concepts: List[Dict[str, Any]],  # Active concepts from DB
+        extracted_text: str,  # All uploaded materials combined
+        course_title: str,
+        course_description: str = ""
+    ) -> Dict[str, str]:
+        """
+        Generate detailed descriptions for all active concepts using all uploaded materials.
+        
+        Args:
+            concepts: List of active concepts from database
+            extracted_text: All text content from uploaded files combined
+            course_title: Title of the course
+            course_description: Optional course description
+            
+        Returns:
+            Dict mapping concept_id -> detailed_description
+        """
+        
+        prompt = self._get_concept_descriptions_prompt(
+            concepts, extracted_text, course_title, course_description
+        )
+        
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system", 
+                        "content": "Ты эксперт-педагог по созданию качественного образовательного контента в традициях российской педагогической школы. Твоя задача - создать подробные, научно точные и педагогически выверенные описания концептов на основе учебных материалов. Следуй принципам Выготского о развивающем обучении."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt  
+                    }
+                ],
+                max_completion_tokens=settings.MAX_TOKENS,
+                response_format={"type": "json_object"}
+            )
+            
+            content = response.choices[0].message.content
+            
+            if not content or content.strip() == "":
+                raise Exception("Empty response from OpenAI")
+            
+            # Debug logging
+            print(f"Generated descriptions response length: {len(content)}")
+            print(f"Response preview: {content[:200]}...")
+            
+            try:
+                parsed_response = json.loads(content)
+                descriptions = parsed_response.get("descriptions", {})
+                
+                # Ensure we have description for each concept
+                result = {}
+                for concept in concepts:
+                    concept_id = str(concept['id'])
+                    if concept_id in descriptions:
+                        result[concept_id] = descriptions[concept_id]
+                    else:
+                        # Fallback if OpenAI didn't provide description for this concept
+                        result[concept_id] = f"Описание для концепта '{concept['title']}' будет добавлено позже."
+                
+                return result
+                
+            except json.JSONDecodeError as e:
+                print(f"JSON decode error in descriptions: {e}")
+                print(f"Content that failed to parse: {content}")
+                raise Exception(f"Invalid JSON response from OpenAI: {str(e)}")
+                
+        except Exception as e:
+            print(f"Full error in generate_concept_descriptions: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise Exception(f"Error generating concept descriptions: {str(e)}")
+    
     def _get_simple_complexity_prompt(
         self, 
         text: str, 
@@ -450,3 +527,80 @@ class OpenAIService:
             return ConnectionType.SIMILAR
         else:
             return ConnectionType.RELATED
+    
+    def _get_concept_descriptions_prompt(
+        self,
+        concepts: List[Dict[str, Any]],
+        extracted_text: str,
+        course_title: str,
+        course_description: str
+    ) -> str:
+        """Get prompt for generating detailed concept descriptions."""
+        
+        # Prepare concept list
+        concepts_list = []
+        for concept in concepts:
+            bloom_mapping = {
+                'remember': 'запоминание',
+                'understand': 'понимание', 
+                'apply': 'применение',
+                'analyze': 'анализ',
+                'evaluate': 'оценка',
+                'create': 'создание'
+            }
+            bloom_ru = bloom_mapping.get(concept.get('bloom_level', 'understand'), 'понимание')
+            
+            concepts_list.append(f"ID {concept['id']}: {concept['title']} (уровень: {bloom_ru})")
+        
+        concepts_text = "\n".join(concepts_list)
+        
+        return f"""
+АНАЛИЗ И СОЗДАНИЕ ОПИСАНИЙ КОНЦЕПТОВ
+
+КУРС: "{course_title}"
+ОПИСАНИЕ КУРСА: {course_description}
+
+ВСЕ УЧЕБНЫЕ МАТЕРИАЛЫ:
+{extracted_text[:settings.MAX_CONTEXT]}
+
+КОНЦЕПТЫ ДЛЯ ОПИСАНИЯ:
+{concepts_text}
+
+ЗАДАЧА:
+Проанализируй ВСЕ учебные материалы и создай подробные, качественные описания для КАЖДОГО концепта. Учти контекст всех материалов при создании каждого описания.
+
+ПРИНЦИПЫ СОЗДАНИЯ ОПИСАНИЙ:
+1. НАУЧНОСТЬ - используй точную терминологию из материалов
+2. ПОЛНОТА - покрой все важные аспекты концепта из материалов
+3. СВЯЗНОСТЬ - покажи как концепт связан с другими из списка
+4. ДОСТУПНОСТЬ - объясни сложные понятия через простые аналогии
+5. ПРАКТИЧНОСТЬ - укажи практическое применение из материалов
+6. РАЗВИВАЮЩИЙ ХАРАКТЕР - стимулируй дальнейшее изучение
+
+СТРУКТУРА КАЖДОГО ОПИСАНИЯ (8-12 предложений):
+- ОПРЕДЕЛЕНИЕ: Четкое определение концепта (1-2 предложения)
+- СУТЬ: Подробное объяснение сути на основе материалов (3-4 предложения)
+- ПРИМЕРЫ: Конкретные примеры и случаи из загруженных материалов (2-3 предложения)  
+- СВЯЗИ: Как концепт связан с другими из списка (1-2 предложения)
+- ПРАКТИКА: Практическое значение и применение (1-2 предложения)
+
+ОСОБЕННОСТИ ПО УРОВНЯМ БЛУМА:
+- ЗАПОМИНАНИЕ: акцент на фактах, определениях, терминологии
+- ПОНИМАНИЕ: объяснение сути, интерпретация, сравнения
+- ПРИМЕНЕНИЕ: практические примеры, алгоритмы, процедуры
+- АНАЛИЗ: структура, компоненты, взаимосвязи  
+- ОЦЕНКА: критерии, стандарты, сравнительный анализ
+- СОЗДАНИЕ: инновации, творческие решения, новые подходы
+
+ОБЯЗАТЕЛЬНЫЙ JSON ФОРМАТ:
+{{
+  "descriptions": {{
+    "ID концепта": "Полное развернутое описание концепта в 8-12 предложений, созданное на основе анализа всех учебных материалов...",
+    "{concepts[0]['id']}": "Описание первого концепта...",
+    "{concepts[1]['id'] if len(concepts) > 1 else 'example'}": "Описание второго концепта...",
+    "...": "..."
+  }}
+}}
+
+КРИТИЧНО: Создай описание для КАЖДОГО концепта из списка выше ({len(concepts)} концептов). Используй ID концепта как ключ.
+"""

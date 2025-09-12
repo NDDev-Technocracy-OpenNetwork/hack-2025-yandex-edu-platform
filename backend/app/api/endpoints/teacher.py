@@ -1068,3 +1068,111 @@ async def restore_concept(
         print(f"Error restoring concept: {e}")
         raise HTTPException(status_code=500, detail="Failed to restore concept")
 
+@router.post("/courses/{course_id}/generate-descriptions")
+async def generate_concept_descriptions(
+    course_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Generate detailed descriptions for all active concepts using uploaded materials."""
+    try:
+        print(f"Starting description generation for course {course_id}")
+        
+        # Verify course exists and belongs to teacher
+        course_result = await db.execute(
+            select(Course).where(
+                Course.id == int(course_id),
+                Course.creator_id == 1
+            )
+        )
+        course = course_result.scalar_one_or_none()
+        
+        if not course:
+            raise HTTPException(status_code=404, detail="Course not found")
+        
+        # Get all active concepts
+        concepts_result = await db.execute(
+            select(Concept).where(
+                Concept.course_id == int(course_id),
+                Concept.is_deleted == False
+            ).order_by(Concept.id)
+        )
+        concepts = concepts_result.scalars().all()
+        
+        if not concepts:
+            raise HTTPException(status_code=400, detail="No active concepts found")
+        
+        print(f"Found {len(concepts)} active concepts")
+        
+        # Get all uploaded files for this course
+        files_result = await db.execute(
+            select(UploadedFile).where(UploadedFile.course_id == int(course_id))
+        )
+        uploaded_files = files_result.scalars().all()
+        
+        if not uploaded_files:
+            raise HTTPException(status_code=400, detail="No uploaded files found")
+        
+        print(f"Found {len(uploaded_files)} uploaded files")
+        
+        # Combine all extracted text from uploaded files
+        all_extracted_text = []
+        for file in uploaded_files:
+            if file.extracted_text:
+                all_extracted_text.append(f"=== {file.original_filename} ===\n{file.extracted_text}")
+        
+        if not all_extracted_text:
+            raise HTTPException(status_code=400, detail="No extracted text found in uploaded files")
+        
+        combined_text = "\n\n".join(all_extracted_text)
+        print(f"Combined text length: {len(combined_text)} characters")
+        
+        # Prepare concepts data for OpenAI
+        concepts_data = []
+        for concept in concepts:
+            concepts_data.append({
+                'id': concept.id,
+                'title': concept.title,
+                'bloom_level': concept.bloom_level.value,
+                'description': concept.description or ""
+            })
+        
+        # Generate descriptions using OpenAI
+        openai_service = OpenAIService()
+        descriptions = await openai_service.generate_concept_descriptions(
+            concepts=concepts_data,
+            extracted_text=combined_text,
+            course_title=course.title,
+            course_description=course.description or ""
+        )
+        
+        print(f"Generated descriptions for {len(descriptions)} concepts")
+        
+        # Update concepts with generated descriptions
+        updated_count = 0
+        for concept in concepts:
+            concept_id = str(concept.id)
+            if concept_id in descriptions:
+                concept.description = descriptions[concept_id]
+                concept.updated_at = datetime.utcnow()
+                updated_count += 1
+        
+        await db.commit()
+        
+        print(f"Updated {updated_count} concepts with descriptions")
+        
+        return {
+            "message": "Concept descriptions generated successfully",
+            "updated_concepts": updated_count,
+            "total_concepts": len(concepts),
+            "files_analyzed": len(uploaded_files),
+            "total_text_length": len(combined_text)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error generating concept descriptions: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to generate descriptions: {str(e)}")
+

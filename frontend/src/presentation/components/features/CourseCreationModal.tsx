@@ -21,7 +21,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
   onCourseCreated,
   editingCourse
 }) => {
-  const [currentStep, setCurrentStep] = useState<'form' | 'upload' | 'processing' | 'concepts' | 'graph'>('form');
+  const [currentStep, setCurrentStep] = useState<'form' | 'upload' | 'processing' | 'concepts' | 'content' | 'graph'>('form');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
@@ -98,6 +98,24 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
       fetchUploadedFiles();
     }
   }, [createdCourseId]);
+
+  // Load concepts when entering content step
+  useEffect(() => {
+    if (currentStep === 'content' && createdCourseId && concepts.length === 0) {
+      loadConcepts();
+    }
+  }, [currentStep, createdCourseId]);
+
+  const loadConcepts = async () => {
+    if (!createdCourseId) return;
+    
+    try {
+      const response: any = await apiClient.get(`/teacher/courses/${createdCourseId}`);
+      setConcepts(response.concepts || []);
+    } catch (error) {
+      console.error('Ошибка загрузки концептов:', error);
+    }
+  };
 
   const fetchUploadedFiles = async () => {
     if (!createdCourseId) return;
@@ -340,6 +358,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
             {currentStep === 'upload' && (editingCourse ? 'Добавление материалов' : 'Загрузка материалов')}
             {currentStep === 'processing' && 'Обработка курса'}
             {currentStep === 'concepts' && 'Редактирование концептов'}
+            {currentStep === 'content' && 'Контент концептов'}
             {currentStep === 'graph' && 'Создание графа'}
           </h2>
           <button
@@ -371,22 +390,31 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
             }`}>2</div>
             <div className="w-8 h-0.5 bg-gray-200">
               <div className={`h-full bg-blue-500 transition-all duration-300 ${
-                ['processing', 'concepts', 'graph'].includes(currentStep) ? 'w-full' : 'w-0'
+                ['processing', 'concepts', 'content', 'graph'].includes(currentStep) ? 'w-full' : 'w-0'
               }`} />
             </div>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
               currentStep === 'processing' ? 'bg-blue-500 text-white' : 
-              ['concepts', 'graph'].includes(currentStep) ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+              ['concepts', 'content', 'graph'].includes(currentStep) ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
             }`}>3</div>
             <div className="w-8 h-0.5 bg-gray-200">
               <div className={`h-full bg-blue-500 transition-all duration-300 ${
-                ['concepts', 'graph'].includes(currentStep) ? 'w-full' : 'w-0'
+                ['concepts', 'content', 'graph'].includes(currentStep) ? 'w-full' : 'w-0'
               }`} />
             </div>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
               currentStep === 'concepts' ? 'bg-blue-500 text-white' : 
-              currentStep === 'graph' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+              ['content', 'graph'].includes(currentStep) ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
             }`}>4</div>
+            <div className="w-8 h-0.5 bg-gray-200">
+              <div className={`h-full bg-blue-500 transition-all duration-300 ${
+                ['content', 'graph'].includes(currentStep) ? 'w-full' : 'w-0'
+              }`} />
+            </div>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              currentStep === 'content' ? 'bg-blue-500 text-white' : 
+              currentStep === 'graph' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+            }`}>5</div>
             <div className="w-8 h-0.5 bg-gray-200">
               <div className={`h-full bg-blue-500 transition-all duration-300 ${
                 currentStep === 'graph' ? 'w-full' : 'w-0'
@@ -394,7 +422,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
             </div>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
               currentStep === 'graph' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500'
-            }`}>5</div>
+            }`}>6</div>
           </div>
         </div>
 
@@ -754,9 +782,152 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
                 Назад
               </button>
               <button
-                onClick={() => setCurrentStep('graph')}
+                onClick={() => setCurrentStep('content')}
                 disabled={concepts.length === 0}
                 className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Перейти к контенту
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Content Management */}
+        {currentStep === 'content' && (
+          <div className="space-y-6">
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium text-purple-900">Контент концептов</h3>
+                {createdCourseId && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await apiClient.post(`/teacher/courses/${createdCourseId}/generate-descriptions`);
+                        // Reload concepts with new descriptions
+                        const response: any = await apiClient.get(`/teacher/courses/${createdCourseId}`);
+                        setConcepts(response.concepts || []);
+                        setError(null);
+                      } catch (error) {
+                        console.error('Ошибка генерации описаний:', error);
+                      }
+                    }}
+                    className="px-3 py-1 text-xs bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-colors font-medium"
+                  >
+                    🤖 Сгенерировать описания
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-purple-700">
+                Просмотрите и отредактируйте содержание концептов. Здесь можно управлять описаниями и удалять ненужные концепты.
+              </p>
+            </div>
+
+            <div className="max-h-[500px] overflow-y-auto space-y-4">
+              {concepts.filter(concept => !concept.isDeleted).map((concept, index) => (
+                <div key={concept.id || index} className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-semibold text-lg text-gray-900">{concept.title}</h4>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                          {concept.bloomLevel || 'понимание'}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!createdCourseId) return;
+                        try {
+                          await apiClient.delete(`/teacher/courses/${createdCourseId}/concepts/${concept.id}`);
+                          // Update concepts list to mark as deleted
+                          const updatedConcepts = concepts.map(c => 
+                            c.id === concept.id ? { ...c, isDeleted: true } : c
+                          );
+                          setConcepts(updatedConcepts);
+                        } catch (error) {
+                          console.error('Ошибка удаления концепта:', error);
+                        }
+                      }}
+                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                      title="Удалить концепт"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Описание концепта
+                      </label>
+                      <textarea
+                        value={concept.description || ''}
+                        onChange={(e) => {
+                          const updatedConcepts = [...concepts];
+                          const conceptIndex = concepts.findIndex(c => c.id === concept.id);
+                          if (conceptIndex >= 0) {
+                            updatedConcepts[conceptIndex] = { ...concept, description: e.target.value };
+                            setConcepts(updatedConcepts);
+                          }
+                        }}
+                        onBlur={async () => {
+                          // Auto-save on blur
+                          if (!createdCourseId) return;
+                          try {
+                            await apiClient.patch(`/teacher/courses/${createdCourseId}/concepts/${concept.id}`, {
+                              description: concept.description
+                            });
+                          } catch (error) {
+                            console.error('Auto-save failed:', error);
+                          }
+                        }}
+                        rows={6}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-vertical"
+                        placeholder="Введите подробное описание концепта. Используйте ИИ для автоматической генерации или напишите собственное описание..."
+                      />
+                    </div>
+
+                    {concept.description && (
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h5 className="font-medium text-gray-700 mb-2">Предварительный просмотр:</h5>
+                        <div className="prose prose-sm max-w-none text-gray-600">
+                          {concept.description.split('\n').map((paragraph: string, idx: number) => (
+                            <p key={idx} className="mb-2 last:mb-0">
+                              {paragraph}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {concepts.filter(concept => !concept.isDeleted).length === 0 && (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 mb-2">
+                    <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-500">Нет активных концептов</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-between pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setCurrentStep('concepts')}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Назад к концептам
+              </button>
+              <button
+                onClick={() => setCurrentStep('graph')}
+                disabled={concepts.filter(concept => !concept.isDeleted).length === 0}
+                className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Построить граф
               </button>
@@ -764,7 +935,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
           </div>
         )}
 
-        {/* Step 5: Graph Building */}
+        {/* Step 6: Graph Building */}
         {currentStep === 'graph' && (
           <div className="space-y-6">
             <div className="bg-blue-50 p-4 rounded-lg">
