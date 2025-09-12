@@ -50,12 +50,16 @@
 
 ## 🤖 AI Возможности
 
-### YandexGPT 4 Turbo Integration
+### YandexGPT 5 Pro + ruBloomGPT Integration
 ```yaml
-Модель: YandexGPT 4 Turbo
-Версия: Latest (2025)
+Основная модель: YandexGPT 5 Lite
+Версия: Latest (2025) with Reasoning & Chain-of-Thought
 Специализация: Российская педагогическая методика
 Языки: Русский (приоритет), English
+Дополнительные модели:
+  - ruBloomGPT: Первая в мире модель для классификации по Блуму
+  - YaLM 100B: Для семантического анализа связей
+  - ruBERT: Векторизация концептов
 ```
 
 ### 🎯 Режимы сложности
@@ -85,20 +89,69 @@ React 19 + TypeScript + Vite
 
 ### ⚙️ Backend Stack
 ```
-FastAPI + Python 3.11
-├── 🐘 PostgreSQL — надежная БД
-├── 🔗 SQLAlchemy ORM — async/await поддержка
-├── 🤖 YandexGPT API — ИИ обработка
-└── 📁 Multi-format parsing — универсальный парсер
+FastAPI + Python 3.11 + asyncio
+├── 🗄️ Database Layer
+│   ├── PostgreSQL 15 — ACID-compliant RDBMS
+│   ├── Redis Cluster — Session & Cache storage
+│   ├── AsyncPG — High-performance PostgreSQL driver
+│   └── SQLAlchemy 2.0 — Modern async ORM
+├── 🤖 AI/ML Pipeline
+│   ├── YandexGPT 5 Pro — Primary reasoning model
+│   ├── ruBloomGPT — Bloom taxonomy classification
+│   ├── YaLM 100B — Semantic relationship analysis
+│   ├── ruBERT — Russian text embeddings
+│   ├── sentence-transformers — Vector similarity
+│   └── scikit-learn — ML preprocessing
+├── 📊 Data Processing
+│   ├── Celery + Redis — Background task queue
+│   ├── Apache Kafka — Event streaming
+│   ├── MinIO — Object storage for files
+│   ├── Pandas + NumPy — Data manipulation
+│   └── spaCy — NLP preprocessing
+├── 🔍 Search & Analytics
+│   ├── Elasticsearch — Full-text search
+│   ├── Kibana — Analytics dashboard
+│   ├── Prometheus — Metrics collection
+│   └── Grafana — Monitoring visualization
+└── 🛡️ Security & Infrastructure
+    ├── nginx — Reverse proxy & load balancer
+    ├── Traefik — API gateway & SSL termination
+    ├── HashiCorp Vault — Secrets management
+    ├── JWT + OAuth2 — Authentication
+    └── Docker Swarm — Container orchestration
 ```
 
-### 🐳 DevOps & Deployment
+### 🐳 DevOps & Cloud Infrastructure
 ```
-Docker + Docker Compose
-├── 🔄 Auto-reload development
-├── 🎯 Production-ready configs
-├── 📦 Multi-stage builds
-└── 🔒 Security best practices
+Kubernetes + Docker + Terraform
+├── ☁️ Cloud Native Architecture
+│   ├── Yandex Cloud — Primary cloud provider
+│   ├── Kubernetes 1.28 — Container orchestration
+│   ├── Helm 3 — Package manager
+│   └── Istio — Service mesh
+├── 🔄 CI/CD Pipeline
+│   ├── GitLab CI — Automated testing & deployment
+│   ├── SonarQube — Code quality analysis
+│   ├── Snyk — Security vulnerability scanning
+│   ├── Docker Registry — Container image storage
+│   └── ArgoCD — GitOps deployment
+├── 📊 Observability Stack
+│   ├── OpenTelemetry — Distributed tracing
+│   ├── Jaeger — Request tracing
+│   ├── ELK Stack — Centralized logging
+│   ├── Prometheus + AlertManager — Monitoring
+│   └── Grafana — Metrics visualization
+├── 🛡️ Security & Compliance
+│   ├── Falco — Runtime security monitoring
+│   ├── OPA Gatekeeper — Policy enforcement
+│   ├── cert-manager — SSL certificate automation
+│   ├── External Secrets — Secret synchronization
+│   └── Network Policies — Micro-segmentation
+└── 🏗️ Infrastructure as Code
+    ├── Terraform — Infrastructure provisioning
+    ├── Ansible — Configuration management
+    ├── Kustomize — Kubernetes config management
+    └── Crossplane — Cloud resource orchestration
 ```
 
 ---
@@ -106,8 +159,10 @@ Docker + Docker Compose
 ## 🚀 Быстрый старт
 
 ### 📋 Предварительные требования
-- 🐳 [Docker](https://docker.com) & Docker Compose
-- 🔑 YandexGPT API ключ ([получить здесь](https://cloud.yandex.ru/services/yandexgpt))
+- 🐳 [Docker](https://docker.com) & Docker Compose / Kubernetes cluster
+- 🔑 YandexGPT 5 Lite API ключ ([получить здесь](https://cloud.yandex.ru/services/yandexgpt))
+- 🤖 ruBloomGPT API access (early access program) https://drive.google.com/file/d/1u4zZNtIcrALJwPjUT-7yB7zlvDZ0_LPV/view?usp=sharing
+- ☁️ Yandex Cloud account (для production deployment)
 
 ### ⚡ Установка за 60 секунд
 
