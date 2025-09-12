@@ -30,15 +30,21 @@ async def get_teacher_courses(db: AsyncSession = Depends(get_db)):
         
         course_responses = []
         for course in courses:
-            # Get concepts for this course
+            # Get ALL concepts for this course (needed for the course modal)
             concepts_result = await db.execute(
                 select(Concept).where(Concept.course_id == course.id)
             )
-            concepts = concepts_result.scalars().all()
+            all_concepts = concepts_result.scalars().all()
             
-            # Get connections for this course
+            # Filter active concepts for the main list display
+            concepts = [c for c in all_concepts if not c.is_deleted]
+            
+            # Get active connections for this course
             connections_result = await db.execute(
-                select(Connection).where(Connection.course_id == course.id)
+                select(Connection).where(
+                    Connection.course_id == course.id,
+                    Connection.is_deleted == False
+                )
             )
             connections = connections_result.scalars().all()
             
@@ -58,7 +64,8 @@ async def get_teacher_courses(db: AsyncSession = Depends(get_db)):
                     "bloomLevel": c.bloom_level.value,
                     "position": {"x": c.position_x or 0, "y": c.position_y or 0},
                     "progress": 0,
-                    "comments": []
+                    "comments": [],
+                    "isDeleted": c.is_deleted
                 } for c in concepts],
                 connections=[{
                     "id": str(conn.id),
@@ -304,7 +311,7 @@ async def upload_course_files(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to process files: {str(e)}")
 
-@router.get("/courses/{course_id}", response_model=CourseResponse)
+@router.get("/courses/{course_id}")
 async def get_course_by_id(
     course_id: str,
     db: AsyncSession = Depends(get_db)
@@ -323,44 +330,57 @@ async def get_course_by_id(
         if not course:
             raise HTTPException(status_code=404, detail="Course not found")
         
-        # Get concepts for this course
+        # Get ALL concepts for this course (active and deleted)
         concepts_result = await db.execute(
             select(Concept).where(Concept.course_id == course.id)
         )
         concepts = concepts_result.scalars().all()
         
-        # Get connections for this course
+        # Debug: Check deletion status
+        print(f"Loaded {len(concepts)} concepts for course {course_id}")
+        for c in concepts[:3]:  # Check first 3 concepts
+            print(f"Concept {c.id}: title='{c.title[:30]}...', is_deleted={c.is_deleted}")
+        
+        active_count = len([c for c in concepts if not c.is_deleted])
+        deleted_count = len([c for c in concepts if c.is_deleted])
+        print(f"Course {course_id}: {active_count} active, {deleted_count} deleted concepts")
+        
+        # Get active connections for this course
         connections_result = await db.execute(
-            select(Connection).where(Connection.course_id == course.id)
+            select(Connection).where(
+                Connection.course_id == course.id,
+                Connection.is_deleted == False
+            )
         )
         connections = connections_result.scalars().all()
         
-        return CourseResponse(
-            id=str(course.id),
-            title=course.title,
-            description=course.description or "",
-            createdBy=str(course.creator_id),
-            createdAt=course.created_at,
-            updatedAt=course.updated_at,
-            difficulty=course.difficulty.value,
-            complexity=course.complexity_level.value,
-            concepts=[{
+        return {
+            "id": str(course.id),
+            "title": course.title,
+            "description": course.description or "",
+            "createdBy": str(course.creator_id),
+            "createdAt": course.created_at.isoformat() + "Z",
+            "updatedAt": course.updated_at.isoformat() + "Z",
+            "difficulty": course.difficulty.value,
+            "complexity": course.complexity_level.value,
+            "concepts": [{
                 "id": str(c.id),
                 "title": c.title,
                 "description": c.description or "",
                 "bloomLevel": c.bloom_level.value,
                 "position": {"x": c.position_x or 0, "y": c.position_y or 0},
                 "progress": 0,
-                "comments": []
+                "comments": [],
+                "isDeleted": c.is_deleted
             } for c in concepts],
-            connections=[{
+            "connections": [{
                 "id": str(conn.id),
                 "sourceId": str(conn.source_concept_id),
                 "targetId": str(conn.target_concept_id),
                 "type": conn.connection_type.value,
                 "strength": conn.strength or 0.5
             } for conn in connections]
-        )
+        }
         
     except HTTPException:
         raise
@@ -803,3 +823,250 @@ async def update_course_complexity(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Failed to update course complexity")
+
+@router.patch("/courses/{course_id}/concepts/{concept_id}")
+async def update_concept(
+    course_id: str,
+    concept_id: str,
+    concept_data: dict,
+    db: AsyncSession = Depends(get_db)
+):
+    """Update concept title and description"""
+    try:
+        # Verify course exists and belongs to teacher
+        course_result = await db.execute(
+            select(Course).where(
+                Course.id == int(course_id),
+                Course.creator_id == 1
+            )
+        )
+        course = course_result.scalar_one_or_none()
+        
+        if not course:
+            raise HTTPException(status_code=404, detail="Course not found")
+        
+        # Get the concept
+        concept_result = await db.execute(
+            select(Concept).where(
+                Concept.id == int(concept_id),
+                Concept.course_id == int(course_id),
+                Concept.is_deleted == False
+            )
+        )
+        concept = concept_result.scalar_one_or_none()
+        
+        if not concept:
+            raise HTTPException(status_code=404, detail="Concept not found")
+        
+        # Update concept fields
+        if "title" in concept_data:
+            concept.title = concept_data["title"]
+        if "description" in concept_data:
+            concept.description = concept_data["description"]
+        
+        concept.updated_at = datetime.utcnow()
+        await db.commit()
+        
+        return {
+            "message": "Concept updated successfully",
+            "concept": {
+                "id": str(concept.id),
+                "title": concept.title,
+                "description": concept.description,
+                "bloomLevel": concept.bloom_level.value
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating concept: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update concept")
+
+@router.delete("/courses/{course_id}/concepts/{concept_id}")
+async def delete_concept(
+    course_id: str,
+    concept_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Soft delete concept and remove related connections"""
+    try:
+        # Verify course exists and belongs to teacher
+        course_result = await db.execute(
+            select(Course).where(
+                Course.id == int(course_id),
+                Course.creator_id == 1
+            )
+        )
+        course = course_result.scalar_one_or_none()
+        
+        if not course:
+            raise HTTPException(status_code=404, detail="Course not found")
+        
+        # Get the concept (allow already deleted concepts for idempotent deletion)
+        concept_result = await db.execute(
+            select(Concept).where(
+                Concept.id == int(concept_id),
+                Concept.course_id == int(course_id)
+            )
+        )
+        concept = concept_result.scalar_one_or_none()
+        
+        if not concept:
+            raise HTTPException(status_code=404, detail="Concept not found")
+        
+        # If already deleted, return success (idempotent operation)
+        if concept.is_deleted:
+            return {"message": "Concept already deleted"}
+        
+        # Soft delete the concept
+        concept.is_deleted = True
+        concept.deleted_at = datetime.utcnow()
+        concept.updated_at = datetime.utcnow()
+        
+        # Soft delete all connections related to this concept
+        from sqlalchemy import update, or_
+        
+        # First, find the connections to delete
+        connections_to_delete_result = await db.execute(
+            select(Connection).where(
+                and_(
+                    or_(
+                        Connection.source_concept_id == int(concept_id),
+                        Connection.target_concept_id == int(concept_id)
+                    ),
+                    Connection.is_deleted == False
+                )
+            )
+        )
+        connections_to_delete = connections_to_delete_result.scalars().all()
+        print(f"Found {len(connections_to_delete)} connections to soft delete for concept {concept_id}")
+        
+        # Now soft delete them
+        await db.execute(
+            update(Connection).where(
+                or_(
+                    Connection.source_concept_id == int(concept_id),
+                    Connection.target_concept_id == int(concept_id)
+                )
+            ).values(
+                is_deleted=True,
+                deleted_at=datetime.utcnow()
+            )
+        )
+        
+        print(f"Soft deleted {len(connections_to_delete)} connections for concept {concept_id}")
+        
+        await db.commit()
+        
+        return {
+            "message": "Concept deleted successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error deleting concept: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete concept")
+
+@router.patch("/courses/{course_id}/concepts/{concept_id}/restore")
+async def restore_concept(
+    course_id: str,
+    concept_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Restore a soft-deleted concept"""
+    try:
+        # Verify course exists and belongs to teacher
+        course_result = await db.execute(
+            select(Course).where(
+                Course.id == int(course_id),
+                Course.creator_id == 1
+            )
+        )
+        course = course_result.scalar_one_or_none()
+        
+        if not course:
+            raise HTTPException(status_code=404, detail="Course not found")
+        
+        # Get the deleted concept
+        concept_result = await db.execute(
+            select(Concept).where(
+                Concept.id == int(concept_id),
+                Concept.course_id == int(course_id),
+                Concept.is_deleted == True
+            )
+        )
+        concept = concept_result.scalar_one_or_none()
+        
+        if not concept:
+            raise HTTPException(status_code=404, detail="Deleted concept not found")
+        
+        # Restore the concept
+        concept.is_deleted = False
+        concept.deleted_at = None
+        concept.updated_at = datetime.utcnow()
+        
+        # Restore connections related to this concept (only if both concepts are active)
+        from sqlalchemy import update, and_, or_
+        
+        # Get all deleted connections for this concept
+        deleted_connections_result = await db.execute(
+            select(Connection).where(
+                and_(
+                    or_(
+                        Connection.source_concept_id == int(concept_id),
+                        Connection.target_concept_id == int(concept_id)
+                    ),
+                    Connection.is_deleted == True
+                )
+            )
+        )
+        deleted_connections = deleted_connections_result.scalars().all()
+        
+        print(f"Found {len(deleted_connections)} deleted connections for concept {concept_id}")
+        
+        # Restore connections where both source and target concepts are active
+        restored_count = 0
+        for conn in deleted_connections:
+            source_concept_result = await db.execute(
+                select(Concept).where(
+                    and_(
+                        Concept.id == conn.source_concept_id,
+                        Concept.is_deleted == False
+                    )
+                )
+            )
+            target_concept_result = await db.execute(
+                select(Concept).where(
+                    and_(
+                        Concept.id == conn.target_concept_id,
+                        Concept.is_deleted == False
+                    )
+                )
+            )
+            
+            source_concept = source_concept_result.scalar_one_or_none()
+            target_concept = target_concept_result.scalar_one_or_none()
+            
+            # If both concepts are active, restore the connection
+            if source_concept and target_concept:
+                conn.is_deleted = False
+                conn.deleted_at = None
+                restored_count += 1
+                print(f"Restored connection {conn.id} between concepts {source_concept.id} and {target_concept.id}")
+        
+        print(f"Restored {restored_count} connections")
+        
+        await db.commit()
+        
+        return {
+            "message": "Concept restored successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error restoring concept: {e}")
+        raise HTTPException(status_code=500, detail="Failed to restore concept")
+

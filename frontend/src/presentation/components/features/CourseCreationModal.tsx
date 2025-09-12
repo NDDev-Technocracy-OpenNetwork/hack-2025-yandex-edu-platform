@@ -243,13 +243,21 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
       return;
     }
 
-    // If editing existing course with concepts, don't regenerate
+    // If editing existing course with concepts, load them and go to concepts step
     if (isEditingExistingCourse && editingCourse?.concepts && editingCourse.concepts.length > 0) {
-      setError({ message: 'Курс обновлен! Концепты уже существуют.', code: 'SUCCESS' });
-      setTimeout(() => {
-        if (onCourseCreated) onCourseCreated();
-        handleClose();
-      }, 1500);
+      try {
+        // Load existing concepts
+        const conceptsResponse = await apiClient.get(`/teacher/courses/${createdCourseId}/concepts`);
+        
+        setCurrentStep('concepts');
+        setConcepts(conceptsResponse.concepts || []);
+        setParsedText(`Курс содержит ${conceptsResponse.count || 0} концептов. Вы можете перейти к созданию графа или отредактировать концепты.`);
+      } catch (conceptError) {
+        console.error('Error loading existing concepts:', conceptError);
+        setCurrentStep('concepts');
+        setConcepts([]);
+        setParsedText(`Курс содержит концепты, но произошла ошибка при их загрузке. Попробуйте обновить страницу.`);
+      }
       return;
     }
 

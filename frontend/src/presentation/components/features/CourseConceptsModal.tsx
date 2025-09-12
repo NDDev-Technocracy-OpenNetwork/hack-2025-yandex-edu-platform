@@ -16,6 +16,7 @@ interface Concept {
   position: { x: number; y: number };
   progress: number;
   comments: any[];
+  isDeleted?: boolean;
 }
 
 interface Connection {
@@ -29,6 +30,7 @@ interface Connection {
 interface CourseData {
   concepts: Concept[];
   connections: Connection[];
+  deletedConcepts?: Concept[];
   complexity?: string;
 }
 
@@ -43,7 +45,11 @@ export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
   const [updatingComplexity, setUpdatingComplexity] = useState(false);
-  const [activeTab, setActiveTab] = useState<'concepts' | 'connections'>('concepts');
+  const [activeTab, setActiveTab] = useState<'concepts' | 'connections' | 'deleted'>('concepts');
+  const [editingConcept, setEditingConcept] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && courseId) {
@@ -57,9 +63,10 @@ export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
     try {
       const response = await apiClient.get<any>(`/teacher/courses/${courseId}`);
       setCourseData({
-        concepts: response.concepts || [],
+        concepts: (response.concepts || []).filter((c: Concept) => !c.isDeleted),
         connections: response.connections || [],
-        complexity: response.complexity || 'simple' // Use the complexity field directly
+        deletedConcepts: (response.concepts || []).filter((c: Concept) => c.isDeleted),
+        complexity: response.complexity || 'simple'
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось загрузить данные курса');
@@ -74,6 +81,10 @@ export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
     setRegenerating(false);
     setUpdatingComplexity(false);
     setActiveTab('concepts');
+    setEditingConcept(null);
+    setEditTitle('');
+    setDeleting(null);
+    setRestoring(null);
     onClose();
   };
 
@@ -156,8 +167,81 @@ export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
   };
 
   const getConceptTitle = (conceptId: string) => {
+    const concept = courseData?.concepts.find(c => c.id === conceptId) || 
+                    courseData?.deletedConcepts?.find(c => c.id === conceptId);
+    return concept ? concept.title : `Концепт`;
+  };
+
+  const handleEditConcept = (conceptId: string) => {
     const concept = courseData?.concepts.find(c => c.id === conceptId);
-    return concept ? concept.title : `Концепт #${conceptId}`;
+    if (concept) {
+      setEditingConcept(conceptId);
+      setEditTitle(concept.title);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingConcept) return;
+    
+    try {
+      await apiClient.patch(`/teacher/courses/${courseId}/concepts/${editingConcept}`, {
+        title: editTitle
+      });
+      
+      // Update local state
+      setCourseData(prev => prev ? {
+        ...prev,
+        concepts: prev.concepts.map(c => 
+          c.id === editingConcept 
+            ? { ...c, title: editTitle }
+            : c
+        )
+      } : null);
+      
+      setEditingConcept(null);
+      setEditTitle('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось обновить концепт');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingConcept(null);
+    setEditTitle('');
+  };
+
+  const handleDeleteConcept = async (conceptId: string) => {
+    // Prevent duplicate requests
+    if (deleting === conceptId) return;
+    
+    setDeleting(conceptId);
+    try {
+      await apiClient.delete(`/teacher/courses/${courseId}/concepts/${conceptId}`);
+      
+      // Reload course data to get updated concepts and connections
+      await fetchCourseData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось удалить концепт');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const handleRestoreConcept = async (conceptId: string) => {
+    // Prevent duplicate requests
+    if (restoring === conceptId) return;
+    
+    setRestoring(conceptId);
+    try {
+      await apiClient.patch(`/teacher/courses/${courseId}/concepts/${conceptId}/restore`);
+      
+      // Reload course data to get restored connections
+      await fetchCourseData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось восстановить концепт');
+    } finally {
+      setRestoring(null);
+    }
   };
 
   if (!isOpen) return null;
@@ -259,6 +343,16 @@ export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
             >
               Связи ({courseData?.connections.length || 0})
             </button>
+            <button
+              onClick={() => setActiveTab('deleted')}
+              className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'deleted'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Удаленные ({courseData?.deletedConcepts?.length || 0})
+            </button>
           </div>
         </div>
 
@@ -309,24 +403,144 @@ export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
                     <div className="grid gap-4">
                       {courseData.concepts.map((concept, index) => (
                         <div key={concept.id} className="bg-white border border-gray-200 rounded-lg p-5 hover:border-gray-300 transition-colors">
+                          {editingConcept === concept.id ? (
+                            // Edit mode
+                            <div className="space-y-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Название концепта
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editTitle}
+                                  onChange={(e) => setEditTitle(e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Введите название концепта"
+                                />
+                              </div>
+                              <div className="flex items-center justify-between pt-2">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-md border ${getBloomLevelColor(concept.bloomLevel)}`}>
+                                  {getBloomLevelText(concept.bloomLevel)}
+                                </span>
+                                <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                                  >
+                                    Отмена
+                                  </button>
+                                  <button
+                                    onClick={handleSaveEdit}
+                                    disabled={!editTitle.trim()}
+                                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Сохранить
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            // View mode
+                            <>
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                  <div className="flex items-center mb-2">
+                                    <h3 className="text-lg font-semibold text-gray-900 mr-3">{concept.title}</h3>
+                                    <span className={`px-2 py-1 text-xs font-medium rounded-md border ${getBloomLevelColor(concept.bloomLevel)}`}>
+                                      {getBloomLevelText(concept.bloomLevel)}
+                                    </span>
+                                  </div>
+                                  {concept.description && (
+                                    <p className="text-gray-600 text-sm leading-relaxed">{concept.description}</p>
+                                  )}
+                                </div>
+                                <span className="text-sm text-gray-500 font-medium">#{index + 1}</span>
+                              </div>
+                              
+                              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-gray-100">
+                                <button
+                                  onClick={() => handleEditConcept(concept.id)}
+                                  className="px-3 py-1 text-xs text-blue-600 border border-blue-300 rounded hover:bg-blue-50 transition-colors"
+                                >
+                                  ✏️ Редактировать
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteConcept(concept.id)}
+                                  disabled={deleting === concept.id}
+                                  className="px-3 py-1 text-xs text-red-600 border border-red-300 rounded hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {deleting === concept.id ? (
+                                    <>
+                                      <div className="w-3 h-3 border border-red-600 border-t-transparent rounded-full animate-spin inline-block mr-1"></div>
+                                      Удаление...
+                                    </>
+                                  ) : (
+                                    '🗑️ Удалить'
+                                  )}
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Deleted Concepts Tab */}
+              {activeTab === 'deleted' && courseData && (
+                <div className="flex-1 overflow-y-auto">
+                  {!courseData.deletedConcepts || courseData.deletedConcepts.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Нет удаленных концептов</h3>
+                      <p className="text-gray-600">Удаленные концепты появятся здесь и их можно будет восстановить</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {courseData.deletedConcepts.map((concept, index) => (
+                        <div key={concept.id} className="bg-red-50 border border-red-200 rounded-lg p-5 transition-colors">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
                               <div className="flex items-center mb-2">
-                                <h3 className="text-lg font-semibold text-gray-900 mr-3">{concept.title}</h3>
-                                <span className={`px-2 py-1 text-xs font-medium rounded-md border ${getBloomLevelColor(concept.bloomLevel)}`}>
+                                <h3 className="text-lg font-semibold text-gray-900 mr-3 line-through opacity-70">{concept.title}</h3>
+                                <span className={`px-2 py-1 text-xs font-medium rounded-md border opacity-70 ${getBloomLevelColor(concept.bloomLevel)}`}>
                                   {getBloomLevelText(concept.bloomLevel)}
                                 </span>
                               </div>
                               {concept.description && (
-                                <p className="text-gray-600 text-sm leading-relaxed">{concept.description}</p>
+                                <p className="text-gray-600 text-sm leading-relaxed opacity-70 line-through">{concept.description}</p>
                               )}
+                              <div className="mt-2 flex items-center text-xs text-red-600">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                                Концепт удален
+                              </div>
                             </div>
                             <span className="text-sm text-gray-500 font-medium">#{index + 1}</span>
                           </div>
                           
-                          <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
-                            <span>ID: {concept.id}</span>
-                            <span>Позиция: ({concept.position.x.toFixed(1)}, {concept.position.y.toFixed(1)})</span>
+                          <div className="flex items-center justify-end pt-3 border-t border-red-200">
+                            <button
+                              onClick={() => handleRestoreConcept(concept.id)}
+                              disabled={restoring === concept.id}
+                              className="px-3 py-1 text-xs text-green-600 border border-green-300 rounded hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {restoring === concept.id ? (
+                                <>
+                                  <div className="w-3 h-3 border border-green-600 border-t-transparent rounded-full animate-spin inline-block mr-1"></div>
+                                  Восстанавливаем...
+                                </>
+                              ) : (
+                                '↺ Восстановить'
+                              )}
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -397,10 +611,6 @@ export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
                             <span className="text-sm text-gray-500 font-medium">#{index + 1}</span>
                           </div>
                           
-                          <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
-                            <span>ID: {connection.id}</span>
-                            <span>{connection.sourceId} → {connection.targetId}</span>
-                          </div>
                         </div>
                       ))}
                     </div>

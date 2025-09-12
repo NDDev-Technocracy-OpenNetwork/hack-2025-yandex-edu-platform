@@ -101,6 +101,8 @@ class Concept(Base):
     bloom_level = Column(Enum(BloomLevel), nullable=False)
     position_x = Column(Float, default=0.0)
     position_y = Column(Float, default=0.0)
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
@@ -118,6 +120,8 @@ class Connection(Base):
     id = Column(Integer, primary_key=True, index=True)
     connection_type = Column(Enum(ConnectionType), nullable=False)
     strength = Column(Float, default=0.5)  # 0.0 to 1.0
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Foreign Keys
