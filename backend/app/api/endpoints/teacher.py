@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete
 import os
 import uuid
+from datetime import datetime
 from pathlib import Path
 from app.db.database import get_db
 from app.db.models import Course, Concept, Connection, User, UploadedFile, ComplexityLevel
@@ -49,6 +50,7 @@ async def get_teacher_courses(db: AsyncSession = Depends(get_db)):
                 createdAt=course.created_at,
                 updatedAt=course.updated_at,
                 difficulty=course.difficulty.value,
+                complexity=course.complexity_level.value,
                 concepts=[{
                     "id": str(c.id),
                     "title": c.title,
@@ -162,6 +164,7 @@ async def create_course(
             createdAt=new_course.created_at,
             updatedAt=new_course.updated_at,
             difficulty=new_course.difficulty.value,
+            complexity=new_course.complexity_level.value,
             concepts=[],
             connections=[]
         )
@@ -340,6 +343,7 @@ async def get_course_by_id(
             createdAt=course.created_at,
             updatedAt=course.updated_at,
             difficulty=course.difficulty.value,
+            complexity=course.complexity_level.value,
             concepts=[{
                 "id": str(c.id),
                 "title": c.title,
@@ -751,3 +755,51 @@ async def delete_course(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Failed to delete course")
+
+
+@router.patch("/courses/{course_id}/complexity")
+async def update_course_complexity(
+    course_id: str,
+    complexity_data: dict,
+    db: AsyncSession = Depends(get_db)
+):
+    """Update course complexity level"""
+    try:
+        # Verify course exists and belongs to teacher
+        course_result = await db.execute(
+            select(Course).where(
+                Course.id == int(course_id),
+                Course.creator_id == 1
+            )
+        )
+        course = course_result.scalar_one_or_none()
+        
+        if not course:
+            raise HTTPException(status_code=404, detail="Course not found")
+        
+        # Validate complexity level
+        complexity = complexity_data.get("complexity")
+        if complexity not in ["simple", "complex"]:
+            raise HTTPException(status_code=400, detail="Invalid complexity level")
+        
+        # Map to enum value
+        complexity_enum = ComplexityLevel.SIMPLE if complexity == "simple" else ComplexityLevel.COMPLEX
+        
+        # Update course complexity
+        course.complexity_level = complexity_enum
+        course.updated_at = datetime.utcnow()
+        
+        await db.commit()
+        
+        return {
+            "message": "Course complexity updated successfully",
+            "complexity": complexity
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating course complexity: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Failed to update course complexity")

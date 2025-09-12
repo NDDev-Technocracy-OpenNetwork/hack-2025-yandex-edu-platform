@@ -329,25 +329,48 @@ export const TeacherPage: React.FC<TeacherPageProps> = ({ onBack }) => {
                               <span className="text-xs text-gray-500">Обновлен: {lastUpdated}</span>
                               
                               <div className="flex items-center space-x-2">
+                                {/* Редактировать - всегда доступно */}
                                 <button 
                                   onClick={() => handleEditCourse(course)}
                                   className="px-3 py-1 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300"
                                 >
                                   Редактировать
                                 </button>
-                                {course.concepts.length > 0 && (
-                                  <button 
-                                    onClick={() => handleViewConcepts(course.id, course.title)}
-                                    className="px-3 py-1 text-xs text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors duration-300"
-                                  >
-                                    Просмотр концептов
-                                  </button>
-                                )}
-                                {isPublished && (
-                                  <button className="px-3 py-1 text-xs text-green-600 border border-green-300 rounded-lg hover:bg-green-50 transition-colors duration-300">
-                                    Аналитика
-                                  </button>
-                                )}
+                                
+                                {/* Концепты - активно, если есть концепты */}
+                                <button 
+                                  onClick={course.concepts.length > 0 ? () => handleViewConcepts(course.id, course.title) : undefined}
+                                  disabled={course.concepts.length === 0}
+                                  className={`px-3 py-1 text-xs border rounded-lg transition-colors duration-300 ${
+                                    course.concepts.length > 0 
+                                      ? 'text-blue-600 border-blue-300 hover:bg-blue-50 cursor-pointer' 
+                                      : 'text-gray-400 border-gray-200 cursor-not-allowed'
+                                  }`}
+                                >
+                                  Концепты
+                                </button>
+                                
+                                {/* Граф - пока недоступно */}
+                                <button 
+                                  disabled={true}
+                                  className="px-3 py-1 text-xs text-gray-400 border border-gray-200 rounded-lg cursor-not-allowed transition-colors duration-300"
+                                >
+                                  Граф
+                                </button>
+                                
+                                {/* Аналитика - активно, если опубликован */}
+                                <button 
+                                  disabled={!isPublished}
+                                  className={`px-3 py-1 text-xs border rounded-lg transition-colors duration-300 ${
+                                    isPublished 
+                                      ? 'text-green-600 border-green-300 hover:bg-green-50 cursor-pointer' 
+                                      : 'text-gray-400 border-gray-200 cursor-not-allowed'
+                                  }`}
+                                >
+                                  Аналитика
+                                </button>
+                                
+                                {/* Удалить - всегда доступно */}
                                 <button 
                                   onClick={() => handleDeleteCourse(course.id, course.title)}
                                   className="px-3 py-1 text-xs text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors duration-300"

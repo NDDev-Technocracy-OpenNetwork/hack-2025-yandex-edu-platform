@@ -29,6 +29,7 @@ interface Connection {
 interface CourseData {
   concepts: Concept[];
   connections: Connection[];
+  complexity?: string;
 }
 
 export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
@@ -40,6 +41,8 @@ export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
   const [courseData, setCourseData] = useState<CourseData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
+  const [updatingComplexity, setUpdatingComplexity] = useState(false);
   const [activeTab, setActiveTab] = useState<'concepts' | 'connections'>('concepts');
 
   useEffect(() => {
@@ -55,7 +58,8 @@ export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
       const response = await apiClient.get<any>(`/teacher/courses/${courseId}`);
       setCourseData({
         concepts: response.concepts || [],
-        connections: response.connections || []
+        connections: response.connections || [],
+        complexity: response.complexity || 'simple' // Use the complexity field directly
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось загрузить данные курса');
@@ -67,8 +71,44 @@ export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
   const handleClose = () => {
     setCourseData(null);
     setError(null);
+    setRegenerating(false);
+    setUpdatingComplexity(false);
     setActiveTab('concepts');
     onClose();
+  };
+
+  const handleComplexityChange = async (newComplexity: string) => {
+    setUpdatingComplexity(true);
+    setError(null);
+    try {
+      await apiClient.patch(`/teacher/courses/${courseId}/complexity`, {
+        complexity: newComplexity
+      });
+      
+      // Update local state immediately
+      setCourseData(prev => prev ? {
+        ...prev,
+        complexity: newComplexity
+      } : null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось обновить сложность');
+    } finally {
+      setUpdatingComplexity(false);
+    }
+  };
+
+  const handleRegenerateConcepts = async () => {
+    setRegenerating(true);
+    setError(null);
+    try {
+      await apiClient.post(`/teacher/courses/${courseId}/generate-concepts`);
+      // Reload course data after regeneration
+      await fetchCourseData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось сгенерировать концепты');
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   const getBloomLevelColor = (level: string) => {
@@ -128,18 +168,72 @@ export const CourseConceptsModal: React.FC<CourseConceptsModalProps> = ({
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Концепты и связи курса</h2>
-            <p className="text-sm text-gray-600 mt-1">{courseTitle}</p>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Концепты и связи курса</h2>
+                <p className="text-sm text-gray-600 mt-1">{courseTitle}</p>
+              </div>
+              <div className="flex items-center space-x-3">
+                {/* Complexity Toggle */}
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600 font-medium">Сложность:</span>
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                    <button
+                      onClick={() => courseData?.complexity !== 'simple' && handleComplexityChange('simple')}
+                      disabled={updatingComplexity || loading || regenerating}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                        courseData?.complexity === 'simple'
+                          ? 'bg-white text-blue-600 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-800'
+                      } disabled:opacity-50`}
+                    >
+                      Простая
+                    </button>
+                    <button
+                      onClick={() => courseData?.complexity !== 'complex' && handleComplexityChange('complex')}
+                      disabled={updatingComplexity || loading || regenerating}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                        courseData?.complexity === 'complex'
+                          ? 'bg-white text-blue-600 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-800'
+                      } disabled:opacity-50`}
+                    >
+                      Сложная
+                    </button>
+                  </div>
+                  {updatingComplexity && (
+                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  )}
+                </div>
+                
+                <button
+                  onClick={handleRegenerateConcepts}
+                  disabled={regenerating || loading || updatingComplexity}
+                  className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  {regenerating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Генерируем...
+                    </>
+                  ) : (
+                    <>
+                      🔄 Сгенерировать еще раз
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleClose}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
 
         {/* Tab Navigation */}

@@ -25,6 +25,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
+  const [isEditingExistingCourse, setIsEditingExistingCourse] = useState(false);
   const [complexity, setComplexity] = useState<'simple' | 'complex'>('simple');
   const [concepts, setConcepts] = useState<any[]>([]);
   const [parsedText, setParsedText] = useState<string>('');
@@ -56,11 +57,18 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
       setTitle(editingCourse.title);
       setDescription(editingCourse.description || '');
       setCreatedCourseId(editingCourse.id);
-      // For existing courses, start at upload step
-      setCurrentStep('upload');
+      setIsEditingExistingCourse(true);
+      
+      // If course has concepts, skip concept editing and go straight to upload
+      if (editingCourse.concepts && editingCourse.concepts.length > 0) {
+        setCurrentStep('upload');
+      } else {
+        setCurrentStep('upload');
+      }
     } else if (isOpen) {
       // For new courses, start at form step
       setCurrentStep('form');
+      setIsEditingExistingCourse(false);
     }
   }, [editingCourse, isOpen]);
 
@@ -69,6 +77,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
     setTitle('');
     setDescription('');
     setCreatedCourseId(null);
+    setIsEditingExistingCourse(false);
     setComplexity('simple');
     setConcepts([]);
     setParsedText('');
@@ -231,6 +240,16 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
   const handleContinue = async () => {
     if (!createdCourseId) {
       setError({ message: 'Ошибка: курс не создан', code: 'NO_COURSE_ID' });
+      return;
+    }
+
+    // If editing existing course with concepts, don't regenerate
+    if (isEditingExistingCourse && editingCourse?.concepts && editingCourse.concepts.length > 0) {
+      setError({ message: 'Курс обновлен! Концепты уже существуют.', code: 'SUCCESS' });
+      setTimeout(() => {
+        if (onCourseCreated) onCourseCreated();
+        handleClose();
+      }, 1500);
       return;
     }
 
@@ -594,7 +613,10 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
                 disabled={uploadedFiles.length === 0}
                 className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Продолжить
+                {isEditingExistingCourse && editingCourse?.concepts && editingCourse.concepts.length > 0 
+                  ? 'Сохранить изменения' 
+                  : 'Продолжить'
+                }
               </button>
             </div>
           </div>
@@ -668,7 +690,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
                 )}
               </div>
               <p className="text-sm text-green-700">
-                ИИ извлек {concepts.length} концептов из загруженных материалов. Вы можете редактировать их перед созданием графа.
+                ИИ извлек {concepts.length} концептов из загруженных материалов. Отредактируйте названия при необходимости.
               </p>
             </div>
 
@@ -692,44 +714,10 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
                     />
                   </div>
                   
-                  {/* Only show description field if concept has description or user wants to add one */}
-                  {(concept.description || concept.showDescription) && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Описание
-                      </label>
-                      <textarea
-                        value={concept.description || ''}
-                        onChange={(e) => {
-                          const updatedConcepts = [...concepts];
-                          updatedConcepts[index] = { ...concept, description: e.target.value };
-                          setConcepts(updatedConcepts);
-                        }}
-                        rows={2}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Добавьте описание концепта (необязательно)"
-                      />
-                    </div>
-                  )}
-                  
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <span className="text-sm text-gray-600">
-                        Уровень: <span className="font-medium">{concept.bloomLevel || 'не определен'}</span>
-                      </span>
-                      {!concept.description && !concept.showDescription && (
-                        <button
-                          onClick={() => {
-                            const updatedConcepts = [...concepts];
-                            updatedConcepts[index] = { ...concept, showDescription: true };
-                            setConcepts(updatedConcepts);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 text-sm underline"
-                        >
-                          + Добавить описание
-                        </button>
-                      )}
-                    </div>
+                    <span className="text-sm text-gray-600">
+                      Уровень: <span className="font-medium">{concept.bloomLevel || 'не определен'}</span>
+                    </span>
                     <button
                       onClick={() => {
                         const updatedConcepts = concepts.filter((_, i) => i !== index);

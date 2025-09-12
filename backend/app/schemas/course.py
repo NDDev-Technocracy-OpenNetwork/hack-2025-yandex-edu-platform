@@ -105,6 +105,7 @@ class CourseResponse(BaseModel):
     createdAt: datetime
     updatedAt: datetime
     difficulty: str
+    complexity: str
     concepts: List[FrontendConcept] = []
     connections: List[FrontendConnection] = []
 
