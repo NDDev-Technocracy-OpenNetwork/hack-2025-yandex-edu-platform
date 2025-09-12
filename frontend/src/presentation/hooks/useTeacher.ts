@@ -101,14 +101,16 @@ export const useCourseCreation = () => {
   const { setError, setLoading } = useUI();
   const [isCreating, setIsCreating] = useState(false);
 
-  const createCourse = useCallback(async (title: string, description: string) => {
+  const createCourse = useCallback(async (title: string, description: string, complexity: 'simple' | 'complex' = 'simple') => {
     try {
       setIsCreating(true);
       setLoading(true);
       
       const newCourse = await apiTeacherRepository.createCourse({
         title,
-        description
+        description,
+        complexity_level: complexity === 'complex' ? 'complex' : 'simple',
+        difficulty: 'Beginner'
       });
       
       addCourse(newCourse);

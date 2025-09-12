@@ -18,6 +18,8 @@ export interface StudentActivity {
 export interface CourseCreationRequest {
   title: string;
   description: string;
+  complexity_level?: 'simple' | 'complex';
+  difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
 }
 
 export interface FileUploadResponse {

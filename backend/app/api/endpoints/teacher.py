@@ -155,8 +155,8 @@ async def create_course(
             title=course_data.title,
             description=course_data.description,
             creator_id=1,  # Mock teacher user ID (we'll create if needed)
-            difficulty=DifficultyLevel.BEGINNER,
-            complexity_level=ComplexityLevel.SIMPLE
+            difficulty=course_data.difficulty,
+            complexity_level=course_data.complexity_level
         )
         
         db.add(new_course)
@@ -226,7 +226,10 @@ async def upload_course_files(
             print(f"File size: {len(file_content)} bytes")
             
             # Validate file type
-            if not FileParserService.is_supported_file_type(file.content_type or "", file.filename):
+            print(f"Checking file type support for: {file.filename}, content_type: {file.content_type}")
+            is_supported = FileParserService.is_supported_file_type(file.content_type or "", file.filename)
+            print(f"File type supported: {is_supported}")
+            if not is_supported:
                 print(f"Unsupported file type: {file.filename}, content_type: {file.content_type}")
                 raise HTTPException(
                     status_code=400, 
@@ -234,6 +237,7 @@ async def upload_course_files(
                 )
             
             # Validate file size
+            print(f"Checking file size: {len(file_content)} vs limit {settings.MAX_FILE_SIZE_MB * 1024 * 1024}")
             if len(file_content) > settings.MAX_FILE_SIZE_MB * 1024 * 1024:
                 raise HTTPException(
                     status_code=400, 
@@ -249,14 +253,21 @@ async def upload_course_files(
             
             with open(file_path, "wb") as f:
                 f.write(file_content)
+            print(f"File saved to disk: {file_path}, exists: {file_path.exists()}")
             
             try:
                 # Parse file content
+                print(f"Attempting to parse file: {file.filename}, Content-Type: {file.content_type}")
                 extracted_text = await FileParserService.parse_file(
                     str(file_path), 
                     file.content_type or ""
                 )
-                extracted_texts.append(extracted_text)
+                print(f"Extracted text length: {len(extracted_text) if extracted_text else 0}")
+                if extracted_text:
+                    extracted_texts.append(extracted_text)
+                    print(f"Successfully added text from {file.filename}")
+                else:
+                    print(f"No text extracted from {file.filename}")
                 
                 # Save file info to database
                 uploaded_file = UploadedFile(
@@ -273,6 +284,8 @@ async def upload_course_files(
                 
             except Exception as parse_error:
                 print(f"Error parsing file {file.filename}: {parse_error}")
+                import traceback
+                traceback.print_exc()
                 # Remove the file if parsing failed
                 if file_path.exists():
                     file_path.unlink()
@@ -282,6 +295,8 @@ async def upload_course_files(
         await db.commit()
         
         if not extracted_texts:
+            print(f"ERROR: No text extracted from {len(files)} files")
+            print(f"Files processed: {[f.filename for f in files]}")
             raise HTTPException(status_code=400, detail="No valid text content extracted from files")
         
         # Combine all extracted text

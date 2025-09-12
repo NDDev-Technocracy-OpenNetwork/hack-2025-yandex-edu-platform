@@ -195,7 +195,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
     }
 
     try {
-      const course = await createCourse(title.trim(), description.trim());
+      const course = await createCourse(title.trim(), description.trim(), complexity);
       setCreatedCourseId(course.id);
       setCurrentStep('upload');
     } catch (error) {

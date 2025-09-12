@@ -39,7 +39,7 @@ export const GraphBuildingAnimation: React.FC<GraphBuildingAnimationProps> = ({
     x: 200 + (index % 4) * 400 + Math.random() * 100,
     y: 200 + Math.floor(index / 4) * 300 + Math.random() * 100,
     title: concept.title,
-    delay: index * 400, // Сокращаем для 8-секундной анимации
+    delay: index * 250, // Ускоренная анимация - 8 секунд
     connected: false
   }));
 
@@ -51,7 +51,7 @@ export const GraphBuildingAnimation: React.FC<GraphBuildingAnimationProps> = ({
         x: 300 + (i % 3) * 400 + Math.random() * 100,
         y: 250 + Math.floor(i / 3) * 200 + Math.random() * 100,
         title: `Концепт ${i + 1}`,
-        delay: i * 500, // Сокращаем для 8-секундной анимации
+        delay: i * 300, // Ускоренная анимация - 8 секунд
         connected: false
       });
     }
@@ -100,7 +100,7 @@ export const GraphBuildingAnimation: React.FC<GraphBuildingAnimationProps> = ({
       connections.forEach((connection, index) => {
         setTimeout(() => {
           setVisibleConnections(prev => [...prev, connection]);
-        }, index * 200); // Сокращаем задержку между связями для 8-секундной анимации
+        }, index * 120); // Ускоренная анимация - 8 секунд
       });
 
       // Phase 3: Финишная стадия - "Прикрепляем контент"
@@ -118,12 +118,12 @@ export const GraphBuildingAnimation: React.FC<GraphBuildingAnimationProps> = ({
             // Финальная задержка перед завершением
             setTimeout(() => {
               onComplete();
-            }, 1500);
-          }, 4000); // Увеличиваем время для показа финального логотипа и чтения текста
-        }, 1000);
-      }, connections.length * 200 + 1000);
+            }, 1000);
+          }, 2500); // Сокращаем время показа логотипа для 8-секундной анимации
+        }, 600);
+      }, connections.length * 120 + 600); // Ускоряем переходы между фазами
 
-    }, Math.max(...animationNodes.map(n => n.delay)) + 1000);
+    }, Math.max(...animationNodes.map(n => n.delay)) + 500); // Ускоряем начало фазы связей
 
     return () => {
       nodeTimers.forEach(clearTimeout);

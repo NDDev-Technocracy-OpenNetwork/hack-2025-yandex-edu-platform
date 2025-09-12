@@ -46,7 +46,7 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 
     class Config:
-        env_file = "../.env"  # .env файл в корневой папке проекта
+        env_file = "../../.env"  # .env файл в корневой папке проекта
         env_file_encoding = 'utf-8'
         extra = 'ignore'  # Ignore extra fields from .env
 

@@ -57,6 +57,8 @@ class CourseBase(BaseModel):
 class CourseCreate(BaseModel):
     title: str
     description: Optional[str] = None
+    difficulty: Optional[DifficultyLevel] = DifficultyLevel.BEGINNER
+    complexity_level: Optional[ComplexityLevel] = ComplexityLevel.SIMPLE
 
 class CourseUpdate(BaseModel):
     title: Optional[str] = None
