@@ -1,5 +1,9 @@
 # 🎓 ГрафиУм — Образовательная платформа нового поколения
 
+> **DEPRECATED.** This repository is archived and no longer maintained.
+> It is kept read-only for reference; its GDS anchor records
+> `lifecycle: archived` under `portfolio:archived-projects`.
+
 <div align="center">
 
 ![ГрафиУм](https://img.shields.io/badge/ГрафиУм-Education%20Platform-blue?style=for-the-badge)
