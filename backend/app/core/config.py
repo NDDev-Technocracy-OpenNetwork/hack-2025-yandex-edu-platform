@@ -18,7 +18,10 @@ class Settings(BaseSettings):
     VERBOSITY_CONTENT: str = "high"
     
     # Security
-    SECRET_KEY: str = "dev-secret-key-change-in-production"
+    # SECRET_KEY is intentionally required (no default): the app must fail fast at
+    # startup if it is not provided via the SECRET_KEY env var / .env file, rather
+    # than silently falling back to an insecure hardcoded value.
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
