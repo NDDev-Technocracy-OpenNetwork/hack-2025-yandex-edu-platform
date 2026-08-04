@@ -1,0 +1,47 @@
+name: ci
+
+# CI for rldyourmnd/hack-2025-yandex-edu-platform (public OSS).
+# Python backend (FastAPI) + TypeScript frontend (Vite) + Dockerfiles (hadolint).
+# Triggers: pull_request + workflow_dispatch ONLY (no push: cross-owner reusable).
+# Reusable workflows are pinned to an immutable ci-workflows SHA.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: python backend (3.11)
+    permissions:
+      contents: read
+    uses: NDDev-it-com/ci-workflows/.github/workflows/python-ci.yml@ca538d59aef41c1bb03c3669366c368128d5af88
+    with:
+      python_version: '3.11'
+      working_directory: backend
+      install_command: 'uv pip install --system -r requirements.txt'
+      test_command: 'ruff check .'
+
+  node:
+    name: node frontend
+    permissions:
+      contents: read
+    uses: NDDev-it-com/ci-workflows/.github/workflows/node-ci.yml@ca538d59aef41c1bb03c3669366c368128d5af88
+    with:
+      working_directory: frontend
+      install_command: 'npm ci'
+      test_command: 'npm run build'
+
+  hadolint:
+    name: hadolint
+    permissions:
+      contents: read
+    uses: NDDev-it-com/ci-workflows/.github/workflows/hadolint-ci.yml@ca538d59aef41c1bb03c3669366c368128d5af88
+    with:
+      recursive: true
+      failure_threshold: warning
