@@ -20,7 +20,7 @@ jobs:
     name: python backend (3.11)
     permissions:
       contents: read
-    uses: NDDev-Technocracy-OpenNetwork/ci-workflows/.github/workflows/python-ci.yml@93eeb2a65e98a29e9dbff7909f67c6419abff046
+    uses: NDDev-Technocracy-Archive/ci-workflows-20261014/.github/workflows/python-ci.yml@93eeb2a65e98a29e9dbff7909f67c6419abff046
     with:
       uv_version: "0.12.23"
       python_version: '3.11'
@@ -32,7 +32,7 @@ jobs:
     name: node frontend
     permissions:
       contents: read
-    uses: NDDev-Technocracy-OpenNetwork/ci-workflows/.github/workflows/node-ci.yml@93eeb2a65e98a29e9dbff7909f67c6419abff046
+    uses: NDDev-Technocracy-Archive/ci-workflows-20261014/.github/workflows/node-ci.yml@93eeb2a65e98a29e9dbff7909f67c6419abff046
     with:
       package_manager: npm
       node_version: "24.21.0"
@@ -45,7 +45,7 @@ jobs:
     name: hadolint
     permissions:
       contents: read
-    uses: NDDev-Technocracy-OpenNetwork/ci-workflows/.github/workflows/hadolint-ci.yml@93eeb2a65e98a29e9dbff7909f67c6419abff046
+    uses: NDDev-Technocracy-Archive/ci-workflows-20261014/.github/workflows/hadolint-ci.yml@93eeb2a65e98a29e9dbff7909f67c6419abff046
     with:
       recursive: true
       failure_threshold: warning
