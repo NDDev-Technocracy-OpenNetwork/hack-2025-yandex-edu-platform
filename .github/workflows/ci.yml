@@ -25,8 +25,8 @@ jobs:
       uv_version: "0.12.23"
       python_version: '3.11'
       working_directory: backend
-      install_command: 'uv pip install --system -r requirements.txt ruff==0.16.8'
-      test_command: 'ruff check .'
+      install_command: 'uv venv --python 3.11 .venv && uv pip install --python .venv/bin/python -r requirements.txt ruff==0.16.8'
+      test_command: ".venv/bin/ruff check . && .venv/bin/python -m unittest discover -s tests -v"
 
   node:
     name: node frontend
@@ -39,7 +39,7 @@ jobs:
       npm_version: "11.19.0"
       working_directory: frontend
       install_command: 'npm ci'
-      test_command: 'npm run build'
+      test_command: ".venv/bin/ruff check . && .venv/bin/python -m unittest discover -s tests -v"
 
   hadolint:
     name: hadolint
