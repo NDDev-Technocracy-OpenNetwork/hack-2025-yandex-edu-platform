@@ -1,4 +1,5 @@
 import os
+import importlib
 import tempfile
 import unittest
 
@@ -8,8 +9,8 @@ os.environ.setdefault('SECRET_KEY', 'publication-fixture-signing-key')
 storage = tempfile.TemporaryDirectory(prefix='grafium-test-')
 os.environ['UPLOAD_DIR'] = storage.name
 
-from main import app
-from app.api.endpoints import courses
+app = importlib.import_module('main').app
+courses = importlib.import_module('app.api.endpoints.courses')
 
 
 class PublicationSmoke(unittest.TestCase):
