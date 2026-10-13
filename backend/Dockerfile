@@ -18,7 +18,7 @@ COPY . .
 RUN mkdir -p uploads
 
 # Expose port (can be overridden by environment)
-EXPOSE ${PORT:-8000}
+EXPOSE 8000
 
 # Run the application (settings from environment variables)
 CMD ["python", "main.py"]

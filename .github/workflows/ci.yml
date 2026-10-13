@@ -26,7 +26,7 @@ jobs:
       python_version: '3.11'
       working_directory: backend
       install_command: 'uv pip install -r requirements.txt ruff==0.16.8'
-      test_command: ".venv/bin/ruff check . && .venv/bin/python -m unittest discover -s tests -v"
+      test_command: "python -m ruff check . && python -m unittest discover -s tests -v"
 
   node:
     name: node frontend
