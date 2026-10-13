@@ -39,7 +39,7 @@ jobs:
       npm_version: "11.19.0"
       working_directory: frontend
       install_command: 'npm ci'
-      test_command: ".venv/bin/ruff check . && .venv/bin/python -m unittest discover -s tests -v"
+      test_command: "npm run build"
 
   hadolint:
     name: hadolint
