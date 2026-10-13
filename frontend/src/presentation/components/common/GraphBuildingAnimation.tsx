@@ -422,7 +422,7 @@ export const GraphBuildingAnimation: React.FC<GraphBuildingAnimationProps> = ({
       </div>
 
       {/* Custom CSS animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes drawLine {
           to {
             stroke-dashoffset: 0;

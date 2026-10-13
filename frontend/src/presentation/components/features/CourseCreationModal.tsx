@@ -143,7 +143,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
     if (!createdCourseId) return;
     
     try {
-      const files = await apiClient.get(`/teacher/courses/${createdCourseId}/files`);
+      const files = await apiClient.get<any[]>(`/teacher/courses/${createdCourseId}/files`);
       setUploadedFiles(files);
     } catch (error) {
       console.error('Error fetching files:', error);
@@ -287,7 +287,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
     if (isEditingExistingCourse && editingCourse?.concepts && editingCourse.concepts.length > 0) {
       try {
         // Load existing concepts
-        const conceptsResponse = await apiClient.get(`/teacher/courses/${createdCourseId}/concepts`);
+        const conceptsResponse = await apiClient.get<{ concepts: any[]; count?: number }>(`/teacher/courses/${createdCourseId}/concepts`);
         
         setCurrentStep('concepts');
         setConcepts(conceptsResponse.concepts || []);
@@ -311,7 +311,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
       setUploadState({ state: PROCESSING_STATES.PROCESSING });
       
       // Call backend API to generate concepts
-      const response = await apiClient.post(`/teacher/courses/${createdCourseId}/generate-concepts`);
+      const response = await apiClient.post<{ extracted_text_length?: number }>(`/teacher/courses/${createdCourseId}/generate-concepts`);
       
       setUploadState({ state: PROCESSING_STATES.EXTRACTING });
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -325,7 +325,7 @@ export const CourseCreationModal: React.FC<CourseCreationModalProps> = ({
       setTimeout(async () => {
         try {
           // Load generated concepts
-          const conceptsResponse = await apiClient.get(`/teacher/courses/${createdCourseId}/concepts`);
+          const conceptsResponse = await apiClient.get<{ concepts: any[]; count?: number }>(`/teacher/courses/${createdCourseId}/concepts`);
           
           setCurrentStep('concepts');
           setConcepts(conceptsResponse.concepts || []);

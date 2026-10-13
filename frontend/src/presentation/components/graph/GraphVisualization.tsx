@@ -92,11 +92,11 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
         .distance(d => 50 + (d.weight * 30))
         .strength(d => d.weight * 0.1)
       )
-      .force('charge', d3.forceManyBody()
+      .force('charge', d3.forceManyBody<D3Node>()
         .strength(d => -200 - (d.connections * 50))
       )
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide()
+      .force('collision', d3.forceCollide<D3Node>()
         .radius(d => 20 + (d.connections * 2))
       );
 

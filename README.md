@@ -1,8 +1,17 @@
-# 🎓 ГрафиУм — Образовательная платформа нового поколения
+<!-- nddev-public-hackathon -->
+# hack-2025-yandex-edu-platform
 
-> **DEPRECATED.** This repository is archived and no longer maintained.
-> It is kept read-only for reference; its GDS anchor records
-> `lifecycle: archived` under `portfolio:archived-projects`.
+Yandex Education 2025 hackathon prototype: GrafiUm turns learning materials into interactive knowledge graphs with configurable AI assistance.
+
+[NDDev OpenNetwork](https://github.com/NDDev-Technocracy-OpenNetwork) · [Repository](https://github.com/NDDev-Technocracy-OpenNetwork/hack-2025-yandex-edu-platform)
+
+This repository is a hackathon prototype or supporting tool. Follow the project-specific setup below; cloud integrations require your own configuration and credentials.
+
+---
+
+## 🎓 ГрафиУм — Образовательная платформа нового поколения
+
+
 
 <div align="center">
 
@@ -424,3 +433,14 @@ copies or substantial portions of the Software.
 *Трансформируем образование с помощью искусственного интеллекта* 🚀
 
 </div>
+## Local verification
+
+```sh
+npm ci --prefix frontend
+npm run --prefix frontend build
+uv venv --python 3.11 backend/.venv
+uv pip install --python backend/.venv/bin/python -r backend/requirements.txt
+PYTHONPATH=backend backend/.venv/bin/python -m unittest discover -s backend/tests -v
+```
+
+This historical prototype mounts demo teacher/student routes without authentication. Run it locally for evaluation; those routes are not a production access-control system. Real graph generation needs an operator-owned OpenAI-compatible provider configuration. For a native backend run, set `UPLOAD_DIR` to a writable local directory and configure the database, API key and signing secret. The root `.env` is read consistently from the repository path.

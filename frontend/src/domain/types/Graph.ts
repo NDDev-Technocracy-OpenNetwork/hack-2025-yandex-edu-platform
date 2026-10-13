@@ -8,6 +8,7 @@ export interface GraphNode {
   level: number;
   bloomLevel?: BloomLevel;
   keywords?: string[];
+  position?: { page: number; paragraph: number };
   x?: number;
   y?: number;
 }

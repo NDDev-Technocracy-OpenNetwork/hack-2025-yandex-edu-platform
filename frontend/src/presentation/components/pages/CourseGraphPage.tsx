@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '../../../infrastructure/api/client';
 import { GraphContainer } from '../graph/GraphContainer';
-import { GraphData, GraphNode } from '../../../domain/types/Graph';
+import { GraphData, GraphNode, GraphLink } from '../../../domain/types/Graph';
 import { ConnectionType, BloomLevel } from '../../../shared/types';
 import { GraphBuildingAnimation } from '../common/GraphBuildingAnimation';
 
@@ -68,7 +68,7 @@ export const CourseGraphPage: React.FC<CourseGraphPageProps> = () => {
       }));
 
       // Create links from connections - handle different possible property names
-      let links = activeConnections.map((connection: any, index: number) => {
+      let links: GraphLink[] = activeConnections.map((connection: any, index: number) => {
         const sourceId = connection.source_concept_id || connection.sourceId || connection.source;
         const targetId = connection.target_concept_id || connection.targetId || connection.target;
         const connectionType = connection.connection_type || connection.type;
@@ -80,7 +80,7 @@ export const CourseGraphPage: React.FC<CourseGraphPageProps> = () => {
           type: connectionType as ConnectionType || 'related',
           weight: connection.strength || connection.weight || 1
         };
-      }).filter(link => link.source && link.target); // Filter out invalid links
+      }).filter((link: GraphLink) => link.source && link.target); // Filter out invalid links
 
       // If no connections exist, create some sample connections for demonstration
       if (links.length === 0 && nodes.length > 1) {

@@ -4,11 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from app.db.database import get_db
-from app.db.models import Course, User, CourseStatus, StudentProgress
+from app.db.models import Course, CourseStatus, StudentProgress
 from app.schemas.course import StudentCourse, StudentConcept, StudentConnection
 # No auth - simplified
 
-from app.core.config import settings
 
 router = APIRouter()
 

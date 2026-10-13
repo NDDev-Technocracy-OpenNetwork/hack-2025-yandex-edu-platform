@@ -2,7 +2,6 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete, update, and_, or_
-import os
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -43,7 +42,7 @@ async def get_teacher_courses(db: AsyncSession = Depends(get_db)):
             connections_result = await db.execute(
                 select(Connection).where(
                     Connection.course_id == course.id,
-                    Connection.is_deleted == False
+                    Connection.is_deleted.is_(False)
                 )
             )
             connections = connections_result.scalars().all()
@@ -130,7 +129,7 @@ async def create_course(
     """Create a new course"""
     try:
         # Ensure mock teacher user exists
-        from app.db.models import DifficultyLevel, ComplexityLevel, UserRole
+        from app.db.models import UserRole
         
         # Check if teacher user exists, create if not
         teacher_result = await db.execute(
@@ -364,7 +363,7 @@ async def get_course_by_id(
         connections_result = await db.execute(
             select(Connection).where(
                 Connection.course_id == course.id,
-                Connection.is_deleted == False
+                Connection.is_deleted.is_(False)
             )
         )
         connections = connections_result.scalars().all()
@@ -865,7 +864,7 @@ async def update_concept(
             select(Concept).where(
                 Concept.id == int(concept_id),
                 Concept.course_id == int(course_id),
-                Concept.is_deleted == False
+                Concept.is_deleted.is_(False)
             )
         )
         concept = concept_result.scalar_one_or_none()
@@ -949,7 +948,7 @@ async def delete_concept(
                         Connection.source_concept_id == int(concept_id),
                         Connection.target_concept_id == int(concept_id)
                     ),
-                    Connection.is_deleted == False
+                    Connection.is_deleted.is_(False)
                 )
             )
         )
@@ -1008,7 +1007,7 @@ async def restore_concept(
             select(Concept).where(
                 Concept.id == int(concept_id),
                 Concept.course_id == int(course_id),
-                Concept.is_deleted == True
+                Concept.is_deleted.is_(True)
             )
         )
         concept = concept_result.scalar_one_or_none()
@@ -1031,7 +1030,7 @@ async def restore_concept(
                         Connection.source_concept_id == int(concept_id),
                         Connection.target_concept_id == int(concept_id)
                     ),
-                    Connection.is_deleted == True
+                    Connection.is_deleted.is_(True)
                 )
             )
         )
@@ -1046,7 +1045,7 @@ async def restore_concept(
                 select(Concept).where(
                     and_(
                         Concept.id == conn.source_concept_id,
-                        Concept.is_deleted == False
+                        Concept.is_deleted.is_(False)
                     )
                 )
             )
@@ -1054,7 +1053,7 @@ async def restore_concept(
                 select(Concept).where(
                     and_(
                         Concept.id == conn.target_concept_id,
-                        Concept.is_deleted == False
+                        Concept.is_deleted.is_(False)
                     )
                 )
             )
@@ -1108,7 +1107,7 @@ async def generate_concept_descriptions(
         concepts_result = await db.execute(
             select(Concept).where(
                 Concept.course_id == int(course_id),
-                Concept.is_deleted == False
+                Concept.is_deleted.is_(False)
             ).order_by(Concept.id)
         )
         concepts = concepts_result.scalars().all()

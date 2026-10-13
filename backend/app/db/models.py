@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
 import enum
-from datetime import datetime
 
 class UserRole(enum.Enum):
     TEACHER = "teacher"

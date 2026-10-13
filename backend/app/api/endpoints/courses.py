@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
@@ -13,7 +13,7 @@ from app.schemas.course import (
     ConnectionUpdate,
     CourseWithFiles
 )
-from app.api.dependencies import get_mock_teacher
+from app.api.dependencies import get_mock_teacher, get_current_user, get_current_teacher
 
 router = APIRouter()
 
