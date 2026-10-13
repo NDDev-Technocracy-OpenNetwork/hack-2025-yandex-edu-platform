@@ -3,7 +3,7 @@
 
 Yandex Education 2025 hackathon prototype: GrafiUm turns learning materials into interactive knowledge graphs with configurable AI assistance.
 
-[NDDev OpenNetwork](https://github.com/NDDev-Technocracy-OpenNetwork) · [Repository](https://github.com/NDDev-Technocracy-OpenNetwork/hack-2025-yandex-edu-platform)
+[NDDev OpenNetwork](https://github.com/NDDev-Technocracy-OpenNetwork) · [Repository](https://github.com/rldyourmnd/hack-2025-yandex-edu-platform)
 
 This repository is a hackathon prototype or supporting tool. Follow the project-specific setup below; cloud integrations require your own configuration and credentials.
 
