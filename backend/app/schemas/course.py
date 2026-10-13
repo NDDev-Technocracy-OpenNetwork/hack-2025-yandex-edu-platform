@@ -183,3 +183,6 @@ class StudentCourse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# Resolve the upload schema declared later in this module before FastAPI registers routes.
+CourseWithFiles.model_rebuild()

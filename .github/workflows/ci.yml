@@ -20,28 +20,32 @@ jobs:
     name: python backend (3.11)
     permissions:
       contents: read
-    uses: NDDev-it-com/ci-workflows/.github/workflows/python-ci.yml@b05016e27151e2d5b3f07e1d856fff50f635ab15
+    uses: NDDev-Technocracy-OpenNetwork/ci-workflows/.github/workflows/python-ci.yml@93eeb2a65e98a29e9dbff7909f67c6419abff046
     with:
+      uv_version: "0.12.23"
       python_version: '3.11'
       working_directory: backend
-      install_command: 'uv pip install --system -r requirements.txt'
-      test_command: 'ruff check .'
+      install_command: 'uv pip install -r requirements.txt ruff==0.15.22'
+      test_command: "python -m ruff check . && python -m unittest discover -s tests -v"
 
   node:
     name: node frontend
     permissions:
       contents: read
-    uses: NDDev-it-com/ci-workflows/.github/workflows/node-ci.yml@b05016e27151e2d5b3f07e1d856fff50f635ab15
+    uses: NDDev-Technocracy-OpenNetwork/ci-workflows/.github/workflows/node-ci.yml@93eeb2a65e98a29e9dbff7909f67c6419abff046
     with:
+      package_manager: npm
+      node_version: "24.21.0"
+      npm_version: "11.19.0"
       working_directory: frontend
       install_command: 'npm ci'
-      test_command: 'npm run build'
+      test_command: "npm run build"
 
   hadolint:
     name: hadolint
     permissions:
       contents: read
-    uses: NDDev-it-com/ci-workflows/.github/workflows/hadolint-ci.yml@b05016e27151e2d5b3f07e1d856fff50f635ab15
+    uses: NDDev-Technocracy-OpenNetwork/ci-workflows/.github/workflows/hadolint-ci.yml@93eeb2a65e98a29e9dbff7909f67c6419abff046
     with:
       recursive: true
       failure_threshold: warning

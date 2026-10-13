@@ -1,13 +1,12 @@
 import os
 import uuid
-import asyncio
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.db.database import get_db
-from app.db.models import Course, UploadedFile, User, CourseStatus, Concept, Connection
+from app.db.models import Course, UploadedFile, CourseStatus, Concept, Connection
 # No auth - simplified
 from app.services.file_parser import FileParserService
 from app.services.openai_service import OpenAIService

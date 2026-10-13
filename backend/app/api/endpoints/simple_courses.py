@@ -1,5 +1,5 @@
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
@@ -10,13 +10,11 @@ from app.schemas.course import (
     CourseCreate, 
     CourseUpdate,
     ConceptUpdate,
-    ConnectionUpdate,
-    CourseWithFiles
+    ConnectionUpdate
 )
 
 router = APIRouter()
 
-from app.core.config import settings
 
 # Mock teacher ID for demo (can be made configurable)  
 MOCK_TEACHER_ID = 1

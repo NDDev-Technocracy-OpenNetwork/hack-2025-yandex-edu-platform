@@ -1,5 +1,4 @@
 import json
-import asyncio
 from typing import List, Dict, Any
 from openai import AsyncOpenAI
 from app.core.config import settings

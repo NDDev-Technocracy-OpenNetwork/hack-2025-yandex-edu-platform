@@ -241,7 +241,7 @@ export class ApiFileUploadRepository implements FileUploadRepository {
 
   async generateGraph(fileId: string): Promise<ApiResponse<{ concepts: any[], connections: any[] }>> {
     try {
-      const response = await apiClient.post(`/files/${fileId}/generate-graph`);
+      const response = await apiClient.post<{ concepts: any[], connections: any[] }>(`/files/${fileId}/generate-graph`);
       return {
         success: true,
         data: response
@@ -292,7 +292,7 @@ export class ApiFileUploadRepository implements FileUploadRepository {
 
   async getUploadStatus(fileId: string): Promise<ApiResponse<{ status: string, progress: number }>> {
     try {
-      const response = await apiClient.get(`/files/${fileId}/status`);
+      const response = await apiClient.get<{ status: string, progress: number }>(`/files/${fileId}/status`);
       return {
         success: true,
         data: response

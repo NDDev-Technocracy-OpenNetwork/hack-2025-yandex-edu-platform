@@ -12,7 +12,15 @@ export class Course implements CourseInterface {
     public difficulty: 'Beginner' | 'Intermediate' | 'Advanced',
     public concepts: Concept[] = [],
     public connections: ConceptConnection[] = [],
-    public progress?: CourseProgress
+    public progress?: CourseProgress,
+    public status: 'active' | 'draft' | 'archived' = 'active',
+    public metadata?: {
+      nodeCount?: number;
+      connectionCount?: number;
+      fileSize?: number;
+      originalFileName?: string;
+      processingProgress?: number;
+    }
   ) {
     this.validateTitle(title);
     this.validateDescription(description);

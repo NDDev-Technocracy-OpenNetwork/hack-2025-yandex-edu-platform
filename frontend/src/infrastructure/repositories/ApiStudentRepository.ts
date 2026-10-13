@@ -69,7 +69,7 @@ export class ApiStudentRepository {
 
   async markConceptCompleted(courseId: number, conceptId: number): Promise<{ success: boolean; message?: string; progress_percentage?: number }> {
     try {
-      const response = await apiClient.post(`/student/courses/${courseId}/progress/concept/${conceptId}`);
+      const response = await apiClient.post<{ message?: string; progress_percentage?: number }>(`/student/courses/${courseId}/progress/concept/${conceptId}`);
       return {
         success: true,
         ...response
